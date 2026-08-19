@@ -27,12 +27,13 @@ export function Header({ onOpenImportModal, onOpenAddModal }: HeaderProps) {
     <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#E2E8F0] bg-white px-4 md:px-6">
       <div className="flex items-center gap-3">
         {/* Mobile Logo */}
-        <div className="flex md:hidden items-center">
+        <div className="flex md:hidden items-center gap-2">
           <img
-            src="/images/brand/navetech-logo.webp"
+            src="/images/brand/logo.png"
             alt="Navetech"
-            className="h-6 w-auto object-contain"
+            className="h-7 w-7 rounded-md object-contain"
           />
+          <span className="font-bold text-xs text-[#0B0B0D]">NAVETECH</span>
         </div>
         <div className="hidden md:flex flex-col">
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
@@ -72,9 +73,11 @@ export function Header({ onOpenImportModal, onOpenAddModal }: HeaderProps) {
 
         {/* User Info */}
         <div className="flex items-center gap-2 rounded-xl border border-[#FFD0A8] bg-[#FFF4EC] px-2.5 py-1 text-xs">
-          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF6A00] text-white font-bold text-[10px]">
-            OP
-          </div>
+          <img
+            src="/images/brand/logo.png"
+            alt="Navetech"
+            className="h-4 w-4 rounded-full object-contain"
+          />
           <span className="hidden sm:inline font-bold text-[#FF6A00]">
             Operador
           </span>

@@ -52,22 +52,25 @@ export function Sidebar() {
 
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-[#E2E8F0] bg-white text-[#0B0B0D] md:flex">
-      {/* Brand Header with Official Navetech Logo */}
+      {/* Brand Header with New Official Navetech Symbol */}
       <div className="flex h-18 items-center justify-between border-b border-[#E2E8F0] px-6 py-4">
-        <Link href="/" className="flex items-center gap-2">
-          {/* Logo Oficial da Navetech */}
+        <Link href="/" className="flex items-center gap-3">
           <img
-            src="/images/brand/navetech-logo.webp"
+            src="/images/brand/logo.png"
             alt="Navetech Telecom"
-            className="h-8 w-auto object-contain"
-            onError={(e) => {
-              // Fallback se a imagem não carregar
-              (e.target as HTMLElement).style.display = "none";
-            }}
+            className="h-8 w-8 rounded-lg object-contain shadow-xs"
           />
+          <div>
+            <h1 className="text-base font-black tracking-tight text-[#0B0B0D] leading-none">
+              NAVETECH
+            </h1>
+            <p className="text-[10px] text-[#FF6A00] font-bold mt-0.5">
+              NaveProspect
+            </p>
+          </div>
         </Link>
         <span className="rounded-md bg-[#FFF4EC] text-[#FF6A00] text-[10px] font-bold px-1.5 py-0.5 border border-[#FFD0A8]">
-          CRM
+          100M
         </span>
       </div>
 

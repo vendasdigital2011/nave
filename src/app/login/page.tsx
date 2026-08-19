@@ -52,14 +52,17 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F8F8FA] p-4 sm:p-6 text-[#0B0B0D]">
       <div className="w-full max-w-md">
-        {/* Logo and Brand */}
+        {/* Logo and Brand with User's Exact Symbol */}
         <div className="mb-8 text-center flex flex-col items-center">
           <img
-            src="/images/brand/navetech-logo.webp"
+            src="/images/brand/logo.png"
             alt="Navetech Telecom"
-            className="h-11 w-auto mb-2 object-contain"
+            className="h-16 w-16 mb-3 object-contain rounded-2xl shadow-sm"
           />
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold tracking-wider text-[#FF6A00] uppercase bg-[#FFF4EC] px-2.5 py-0.5 rounded-full border border-[#FFD0A8]">
+          <h1 className="text-2xl font-black text-[#0B0B0D] tracking-tight">
+            NAVETECH
+          </h1>
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold tracking-wider text-[#FF6A00] uppercase bg-[#FFF4EC] px-2.5 py-0.5 rounded-full border border-[#FFD0A8] mt-1">
             NaveProspect CRM
           </span>
         </div>
