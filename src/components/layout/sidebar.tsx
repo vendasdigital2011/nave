@@ -4,16 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  Kanban,
   Users,
-  BarChart3,
+  Kanban,
   MessageSquare,
+  Upload,
+  Settings,
   Zap,
   ArrowUpRight,
   Database,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Itens oficiais do menu conforme docs/DESIGN-SYSTEM-NAVETECH.md
 const navigationItems = [
   {
     name: "Dashboard",
@@ -21,24 +23,29 @@ const navigationItems = [
     icon: LayoutDashboard,
   },
   {
-    name: "Kanban de Vendas",
-    href: "/kanban",
-    icon: Kanban,
-  },
-  {
-    name: "Lista de Clientes",
+    name: "Clientes",
     href: "/clientes",
     icon: Users,
   },
   {
-    name: "Métricas & Relatórios",
-    href: "/metricas",
-    icon: BarChart3,
+    name: "Kanban",
+    href: "/kanban",
+    icon: Kanban,
   },
   {
-    name: "WhatsApp Conexão",
-    href: "/whatsapp",
+    name: "Conversas",
+    href: "/conversas",
     icon: MessageSquare,
+  },
+  {
+    name: "Importação",
+    href: "/importacao",
+    icon: Upload,
+  },
+  {
+    name: "Configurações",
+    href: "/configuracoes",
+    icon: Settings,
   },
 ];
 
@@ -46,10 +53,10 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r bg-slate-900 text-white md:flex">
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-800 bg-[#0F172A] text-white md:flex">
       {/* Brand Header */}
       <div className="flex h-16 items-center gap-3 border-b border-slate-800 px-6">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 font-bold text-white shadow-lg shadow-blue-500/30">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#2563EB] font-bold text-white shadow-lg shadow-blue-500/30">
           <Zap className="h-5 w-5" />
         </div>
         <div>
@@ -57,7 +64,7 @@ export function Sidebar() {
             NaveProspect
           </h1>
           <p className="text-[11px] text-blue-400 font-medium">
-            CRM Comercial
+            Navetech CRM
           </p>
         </div>
       </div>
@@ -65,7 +72,7 @@ export function Sidebar() {
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto px-3 py-4">
         <div className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-          Operação Comercial
+          Navegação Principal
         </div>
         <nav className="space-y-1">
           {navigationItems.map((item) => {
@@ -78,7 +85,7 @@ export function Sidebar() {
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
                   isActive
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold"
+                    ? "bg-[#2563EB] text-white shadow-md shadow-blue-600/20 font-semibold"
                     : "text-slate-300 hover:bg-slate-800 hover:text-white"
                 )}
               >
@@ -91,17 +98,17 @@ export function Sidebar() {
         </nav>
 
         <div className="mt-8 mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-          Campanha Atual
+          Campanha Ativa
         </div>
         <div className="rounded-xl border border-slate-800 bg-slate-800/60 p-3.5 text-xs">
           <div className="flex items-center justify-between font-semibold text-slate-200 mb-1">
-            <span>Migração Condomínios</span>
+            <span>Upgrade 50M → 100M</span>
             <span className="rounded bg-blue-500/20 px-1.5 py-0.5 text-[10px] text-blue-300 font-bold">
               Ativa
             </span>
           </div>
           <p className="text-[11px] text-slate-400 leading-relaxed">
-            Abordagem manual para dobrar velocidade de clientes 50 Mega para 100 Mega.
+            Operação de migração de clientes em condomínios para dobro de velocidade.
           </p>
         </div>
       </div>
