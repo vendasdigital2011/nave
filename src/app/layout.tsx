@@ -6,8 +6,8 @@ import { AppLayout } from "@/components/layout/app-layout";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Upgrade CRM - 50M para 100M",
-  description: "CRM simples para migração de clientes 50 Mega para 100 Mega",
+  title: "NaveProspect - CRM Comercial & Migração",
+  description: "NaveProspect - CRM simples e humanizado para prospecção e migração de planos",
 };
 
 export default function RootLayout({

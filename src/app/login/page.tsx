@@ -17,8 +17,8 @@ import { Input } from "@/components/ui/input";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("admin@navetech.com.br");
-  const [password, setPassword] = useState("admin123456");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -65,10 +65,10 @@ export default function LoginPage() {
             <Zap className="h-8 w-8" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-            Upgrade CRM
+            NaveProspect
           </h1>
           <p className="text-xs sm:text-sm text-blue-200/80 mt-1">
-            Painel Administrativo & Operacional
+            Painel Comercial & Gestão de Clientes
           </p>
         </div>
 
@@ -77,7 +77,7 @@ export default function LoginPage() {
           <div className="mb-5 flex items-center justify-between border-b border-slate-800 pb-4">
             <div>
               <h2 className="text-base font-bold text-white">Acesso Restrito</h2>
-              <p className="text-xs text-slate-400">Informe suas credenciais de administrador</p>
+              <p className="text-xs text-slate-400">Informe suas credenciais para acessar</p>
             </div>
             <ShieldCheck className="h-5 w-5 text-emerald-400" />
           </div>
@@ -94,7 +94,7 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@navetech.com.br"
+                  placeholder="seu-email@navetech.com.br"
                   required
                   className="pl-9 bg-slate-800/80 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-blue-500 text-xs sm:text-sm h-10"
                 />
@@ -154,23 +154,11 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
-
-          {/* Dica de Acesso Padrão */}
-          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-950/50 p-3 text-center">
-            <span className="text-[11px] text-slate-400 block font-medium">
-              Credenciais Padrão do Administrador:
-            </span>
-            <div className="mt-1 flex items-center justify-center gap-2 text-xs text-blue-300 font-mono">
-              <span>admin@navetech.com.br</span>
-              <span>•</span>
-              <span>admin123456</span>
-            </div>
-          </div>
         </div>
 
         {/* Footer */}
         <p className="mt-6 text-center text-xs text-slate-500">
-          Upgrade CRM WhatsApp MVP • Todos os direitos reservados
+          NaveProspect • Todos os direitos reservados
         </p>
       </div>
     </div>

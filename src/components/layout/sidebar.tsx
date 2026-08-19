@@ -1,4 +1,4 @@
-"useclient";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -54,10 +54,10 @@ export function Sidebar() {
         </div>
         <div>
           <h1 className="text-base font-bold tracking-tight text-white">
-            Upgrade CRM
+            NaveProspect
           </h1>
           <p className="text-[11px] text-blue-400 font-medium">
-            50M → 100M MVP
+            CRM Comercial
           </p>
         </div>
       </div>
