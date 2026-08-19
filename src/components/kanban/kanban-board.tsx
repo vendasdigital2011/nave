@@ -29,25 +29,25 @@ const COLUMNS: {
     id: "frio",
     title: "Frio (A Iniciar)",
     emoji: "❄️",
-    accentColor: "#CBD5E1", // Frio #CBD5E1
+    accentColor: "#94A3B8",
   },
   {
     id: "morno",
     title: "Morno (Em Contato)",
     emoji: "🌤️",
-    accentColor: "#F59E0B", // Morno #F59E0B
+    accentColor: "#F59E0B",
   },
   {
     id: "quente",
     title: "Quente (Interessado)",
     emoji: "🔥",
-    accentColor: "#2563EB", // Quente #2563EB
+    accentColor: "#FF6A00",
   },
   {
     id: "vendido",
     title: "Vendido (Upgrade Feito)",
     emoji: "🏆",
-    accentColor: "#22C55E", // Vendido #22C55E
+    accentColor: "#22C55E",
   },
 ];
 
@@ -83,8 +83,7 @@ export function KanbanBoard() {
     const term = searchTerm.toLowerCase();
     return (
       c.name.toLowerCase().includes(term) ||
-      c.phone.toLowerCase().includes(term) ||
-      (c.condominium && c.condominium.toLowerCase().includes(term))
+      c.phone.toLowerCase().includes(term)
     );
   });
 
@@ -133,14 +132,14 @@ export function KanbanBoard() {
   return (
     <div className="space-y-4">
       {/* Search and Filters bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-[#E2E8F0] shadow-sm">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-[#E2E8F0] shadow-sm">
         <div className="relative w-full sm:w-80">
           <input
             type="text"
-            placeholder="Buscar por nome, telefone ou condomínio..."
+            placeholder="Buscar por nome ou telefone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full text-xs rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-[#0F172A] placeholder:text-[#64748B] focus:outline-none focus:ring-1 focus:ring-[#2563EB]"
+            className="w-full text-xs rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-[#0B0B0D] placeholder:text-[#64748B] focus:outline-none focus:ring-1 focus:ring-[#FF6A00]"
           />
         </div>
         <div className="flex items-center gap-2 text-xs text-[#64748B] w-full sm:w-auto justify-end">

@@ -4,20 +4,18 @@ export interface Client {
   id: string;
   name: string;
   phone: string;
-  condominium?: string;
   current_plan: string;
   target_plan: string;
   status: ClientStatus;
+  feedback_first_contact?: string;
+  feedback_second_contact?: string;
+  notes?: string;
   nps_score?: number | null;
-  wants_upgrade: boolean;
-  gave_referral: boolean;
-  referral_name?: string | null;
-  referral_phone?: string | null;
-  feedback_first_contact?: string | null;
-  feedback_second_contact?: string | null;
-  notes?: string | null;
-  last_contact_at?: string | null;
-  sold_at?: string | null;
+  wants_upgrade?: boolean;
+  gave_referral?: boolean;
+  referral_name?: string;
+  referral_phone?: string;
+  sold_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -25,10 +23,14 @@ export interface Client {
 export interface Interaction {
   id: string;
   client_id: string;
-  type: 'whatsapp' | 'call' | 'note' | 'status_change';
-  content: string;
-  old_status?: ClientStatus | null;
-  new_status?: ClientStatus | null;
+  type?: string;
+  content?: string;
+  channel?: 'whatsapp' | 'call' | 'manual';
+  message_content?: string;
+  direction?: 'inbound' | 'outbound';
+  status?: 'sent' | 'delivered' | 'read' | 'replied' | 'failed';
+  old_status?: string | null;
+  new_status?: string;
   created_at: string;
 }
 

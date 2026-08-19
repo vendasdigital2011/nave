@@ -9,7 +9,6 @@ import {
   AlertCircle,
   Loader2,
   ArrowRight,
-  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -20,7 +19,6 @@ import Link from "next/link";
 interface ParsedRecord {
   name: string;
   phone: string;
-  condominium?: string;
   current_plan: string;
   target_plan: string;
   status: ClientStatus;
@@ -47,7 +45,7 @@ export default function ImportacaoPage() {
     setIsLoading(false);
   };
 
-  const processWorkbookData = (workbook: XLSX.WorkBook, fileName: string) => {
+  const processWorkbookData = (workbook: XLSX.WorkBook) => {
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const rawJson = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, { defval: "" });
@@ -105,7 +103,6 @@ export default function ImportacaoPage() {
       parsed.push({
         name: name || "Cliente sem Nome",
         phone: rawPhone,
-        condominium: "Condomínios Gerais",
         current_plan: "50 Mega",
         target_plan: "100 Mega",
         status,
@@ -135,7 +132,7 @@ export default function ImportacaoPage() {
     try {
       const buffer = await selectedFile.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: "array" });
-      processWorkbookData(workbook, selectedFile.name);
+      processWorkbookData(workbook);
     } catch (err: any) {
       setError("Erro ao ler arquivo: " + err.message);
     } finally {
@@ -161,11 +158,11 @@ export default function ImportacaoPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-xl md:text-2xl font-bold text-[#0F172A] tracking-tight">
+        <h1 className="text-xl md:text-2xl font-bold text-[#0B0B0D] tracking-tight">
           Importação de Planilhas
         </h1>
         <p className="text-xs md:text-sm text-[#64748B]">
-          Carregue planilhas de clientes (XLSX, XLS ou CSV) para abastecer o funil comercial do NaveProspect.
+          Carregue planilhas de clientes (XLSX, XLS ou CSV) para abastecer a campanha de upgrade de velocidade.
         </p>
       </div>
 
@@ -174,8 +171,8 @@ export default function ImportacaoPage() {
         <div className="md:col-span-2 space-y-4">
           <Card className="bg-white border-[#E2E8F0] shadow-sm">
             <CardHeader>
-              <CardTitle className="text-sm font-semibold text-[#0F172A] flex items-center gap-2">
-                <FileSpreadsheet className="h-4 w-4 text-[#2563EB]" />
+              <CardTitle className="text-sm font-bold text-[#0B0B0D] flex items-center gap-2">
+                <FileSpreadsheet className="h-4 w-4 text-[#FF6A00]" />
                 Upload de Planilha
               </CardTitle>
               <CardDescription className="text-xs text-[#64748B]">
@@ -187,12 +184,12 @@ export default function ImportacaoPage() {
               {!file && (
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#E2E8F0] bg-[#F8FAFC] p-10 text-center cursor-pointer hover:border-[#2563EB] hover:bg-[#EFF6FF]/40 transition-all group"
+                  className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#E2E8F0] bg-[#F8FAFC] p-10 text-center cursor-pointer hover:border-[#FF6A00] hover:bg-[#FFF4EC]/40 transition-all group"
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EFF6FF] text-[#2563EB] mb-3 group-hover:scale-105 transition-transform">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FFF4EC] text-[#FF6A00] mb-3 group-hover:scale-105 transition-transform border border-[#FFD0A8]">
                     <Upload className="h-6 w-6" />
                   </div>
-                  <span className="text-xs font-semibold text-[#0F172A]">
+                  <span className="text-xs font-bold text-[#0B0B0D]">
                     Clique aqui ou arraste seu arquivo
                   </span>
                   <span className="text-[11px] text-[#64748B] mt-1">
@@ -209,16 +206,16 @@ export default function ImportacaoPage() {
               )}
 
               {file && (
-                <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 space-y-4">
+                <div className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#2563EB] text-white font-bold">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FF6A00] text-white font-bold">
                         <FileSpreadsheet className="h-5 w-5" />
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-[#0F172A]">{file.name}</div>
+                        <div className="text-xs font-bold text-[#0B0B0D]">{file.name}</div>
                         <div className="text-[11px] text-[#64748B]">
-                          {records.length} registros válidos identificados
+                          {records.length} clientes válidos identificados
                         </div>
                       </div>
                     </div>
@@ -234,18 +231,18 @@ export default function ImportacaoPage() {
 
                   {records.length > 0 && !importedCount && (
                     <div className="border-t border-[#E2E8F0] pt-3">
-                      <span className="text-xs font-semibold text-[#0F172A] block mb-2">
+                      <span className="text-xs font-bold text-[#0B0B0D] block mb-2">
                         Prévia dos dados:
                       </span>
                       <div className="max-h-48 overflow-y-auto space-y-1.5 text-xs">
                         {records.slice(0, 5).map((r, i) => (
                           <div
                             key={i}
-                            className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-[#E2E8F0] text-[#0F172A]"
+                            className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-[#E2E8F0] text-[#0B0B0D]"
                           >
-                            <span className="font-semibold truncate max-w-[200px]">{r.name}</span>
+                            <span className="font-bold truncate max-w-[200px]">{r.name}</span>
                             <span className="text-[#64748B] font-mono text-[11px]">{r.phone}</span>
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#F1F5F9] text-[#475569] uppercase">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F1F5F9] text-[#475569] uppercase">
                               {r.status}
                             </span>
                           </div>
@@ -260,14 +257,14 @@ export default function ImportacaoPage() {
                   )}
 
                   {error && (
-                    <div className="flex items-center gap-2 rounded-lg bg-rose-50 p-3 text-xs text-rose-700 border border-rose-200">
+                    <div className="flex items-center gap-2 rounded-xl bg-rose-50 p-3 text-xs text-rose-700 border border-rose-200">
                       <AlertCircle className="h-4 w-4 shrink-0" />
                       <span>{error}</span>
                     </div>
                   )}
 
                   {importedCount !== null && (
-                    <div className="flex flex-col items-center justify-center p-6 rounded-xl bg-emerald-50 border border-emerald-200 text-center space-y-2">
+                    <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-2">
                       <CheckCircle2 className="h-8 w-8 text-emerald-600" />
                       <h3 className="text-xs font-bold text-emerald-900">
                         {importedCount} clientes importados com sucesso!
@@ -277,7 +274,7 @@ export default function ImportacaoPage() {
                       </p>
                       <div className="flex gap-2 mt-2">
                         <Link href="/kanban">
-                          <Button size="sm" className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-medium">
+                          <Button size="sm" className="bg-[#FF6A00] hover:bg-[#E85C00] text-white text-xs font-bold">
                             Ver no Kanban <ArrowRight className="ml-1 h-3 w-3" />
                           </Button>
                         </Link>
@@ -299,7 +296,7 @@ export default function ImportacaoPage() {
                 <Button
                   onClick={handleImport}
                   disabled={isLoading}
-                  className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-medium"
+                  className="bg-[#FF6A00] hover:bg-[#E85C00] text-white text-xs font-bold"
                 >
                   {isLoading ? (
                     <>
@@ -319,21 +316,21 @@ export default function ImportacaoPage() {
         <div className="space-y-4">
           <Card className="bg-white border-[#E2E8F0] shadow-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-xs font-semibold text-[#0F172A]">
+              <CardTitle className="text-xs font-bold text-[#0B0B0D]">
                 Padrão de Colunas
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-xs text-[#64748B]">
-              <div className="p-2 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0]">
-                <span className="font-semibold text-[#0F172A] block">Nome:</span>
+              <div className="p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
+                <span className="font-bold text-[#0B0B0D] block">Nome:</span>
                 <span className="text-[11px] text-[#64748B]">Colunas com "CLIENTE", "NOME"</span>
               </div>
-              <div className="p-2 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0]">
-                <span className="font-semibold text-[#0F172A] block">Contato:</span>
+              <div className="p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
+                <span className="font-bold text-[#0B0B0D] block">Contato:</span>
                 <span className="text-[11px] text-[#64748B]">Colunas com "CONTATO", "TELEFONE"</span>
               </div>
-              <div className="p-2 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0]">
-                <span className="font-semibold text-[#0F172A] block">Feedbacks:</span>
+              <div className="p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
+                <span className="font-bold text-[#0B0B0D] block">Feedbacks:</span>
                 <span className="text-[11px] text-[#64748B]">Colunas com "FEEDBECK", "OBS"</span>
               </div>
             </CardContent>

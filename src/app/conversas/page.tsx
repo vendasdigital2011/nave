@@ -6,9 +6,6 @@ import {
   Search,
   ExternalLink,
   Sparkles,
-  User,
-  Phone,
-  Building,
   CheckCircle2,
   Copy,
   Star,
@@ -28,12 +25,12 @@ const MESSAGE_TEMPLATES = [
   {
     id: "apresentacao",
     title: "1. Oferta 100M",
-    text: "Olá, {NOME}! Tudo bem? Aqui é da Navetech Telecom. Estamos com uma oportunidade exclusiva para você dobrar sua velocidade de 50 Mega para 100 Mega sem custo de adesão! Gostaria de aproveitar?",
+    text: "Olá, {NOME}! Tudo bem? Aqui é da Navetech Telecom. Estamos com uma condição exclusiva para você dobrar sua velocidade de 50 Mega para 100 Mega sem custo de adesão e com novo roteador! Gostaria de aproveitar?",
   },
   {
     id: "roteador",
-    title: "2. Roteador Gigabit",
-    text: "Olá, {NOME}! Para ativar seu novo plano de 100 Mega com máxima performance no Wi-Fi, podemos agendar a visita técnica para configuração do roteador Gigabit. Qual o melhor dia e horário para você?",
+    title: "2. Troca de Roteador",
+    text: "Olá, {NOME}! Para ativar seu novo plano de 100 Mega com máxima performance no Wi-Fi, podemos agendar a visita técnica para instalação do roteador Gigabit. Qual o melhor dia e horário para você?",
   },
   {
     id: "followup",
@@ -47,8 +44,8 @@ const MESSAGE_TEMPLATES = [
   },
   {
     id: "indicacao",
-    title: "5. Indicação",
-    text: "Olá, {NOME}! Que ótimo saber que está satisfeito com a Navetech! Tem algum vizinho ou amigo no condomínio para indicar? Se ele fechar conosco, ambos ganham benefícios!",
+    title: "5. Indique e Ganhe",
+    text: "Olá, {NOME}! Que ótimo saber que está satisfeito com a Navetech! Tem algum amigo ou familiar para indicar no nosso programa Indique e Ganhe? Se ele fechar conosco, ambos ganham benefícios!",
   },
 ];
 
@@ -154,7 +151,7 @@ export default function ConversasPage() {
           Central de Conversas
         </h1>
         <p className="text-xs md:text-sm text-[#64748B]">
-          Atendimento manual humanizado com templates inteligentes da Navetech Telecom.
+          Atendimento humanizado para upgrade de velocidade, troca de roteador e indicações.
         </p>
       </div>
 
@@ -207,7 +204,7 @@ export default function ConversasPage() {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#0B0B0D] truncate max-w-[140px]">
+                    <span className="text-xs font-bold text-[#0B0B0D] truncate max-w-[150px]">
                       {client.name}
                     </span>
                     <span
@@ -222,7 +219,7 @@ export default function ConversasPage() {
                   </div>
                   <div className="flex items-center justify-between mt-1 text-[11px] text-[#64748B]">
                     <span>{formatPhone(client.phone)}</span>
-                    <span className="text-[10px] text-[#94A3B8]">{client.condominium || "Geral"}</span>
+                    <span className="text-[10px] text-[#94A3B8]">50M → 100M</span>
                   </div>
                 </div>
               );
@@ -246,7 +243,7 @@ export default function ConversasPage() {
                     </Badge>
                   </div>
                   <div className="text-[11px] text-[#64748B] mt-0.5">
-                    {formatPhone(selectedClient.phone)} • {selectedClient.condominium || "Condomínio Geral"}
+                    {formatPhone(selectedClient.phone)}
                   </div>
                 </div>
 
@@ -415,14 +412,14 @@ export default function ConversasPage() {
                     onChange={(e) => setClientData({ ...clientData, gave_referral: e.target.checked })}
                     className="h-3.5 w-3.5 rounded border-[#CBD5E1] text-[#FF6A00] focus:ring-[#FF6A00]"
                   />
-                  <span className="text-xs font-semibold text-[#0B0B0D]">Cliente Fez Indicação</span>
+                  <span className="text-xs font-semibold text-[#0B0B0D]">Programa Indique e Ganhe</span>
                 </label>
               </div>
 
               {/* Indicação Fields se ativo */}
               {clientData.gave_referral && (
                 <div className="rounded-xl border border-[#FFD0A8] bg-[#FFF7F1] p-2.5 space-y-2">
-                  <span className="text-[10px] font-bold uppercase text-[#FF6A00]">Dados do Indicado</span>
+                  <span className="text-[10px] font-bold uppercase text-[#FF6A00]">Contato Indicado</span>
                   <Input
                     placeholder="Nome do indicado"
                     value={clientData.referral_name || ""}

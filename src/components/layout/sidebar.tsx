@@ -52,7 +52,7 @@ export function Sidebar() {
 
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-[#E2E8F0] bg-white text-[#0B0B0D] md:flex">
-      {/* Brand Header with New Official Navetech Symbol */}
+      {/* Brand Header with Navetech Symbol */}
       <div className="flex h-18 items-center justify-between border-b border-[#E2E8F0] px-6 py-4">
         <Link href="/" className="flex items-center gap-3">
           <img
@@ -102,29 +102,30 @@ export function Sidebar() {
           })}
         </nav>
 
+        {/* Card Principal Atualizado */}
         <div className="mt-8 mb-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
           Campanha Ativa
         </div>
         <div className="rounded-2xl border border-[#FFD0A8] bg-[#FFF7F1] p-4 text-xs">
-          <div className="flex items-center justify-between font-bold text-[#0B0B0D] mb-1">
-            <span>Upgrade 50M → 100M</span>
+          <div className="flex items-center justify-between font-bold text-[#0B0B0D] mb-1.5">
+            <span>Campanha Ativa</span>
             <span className="rounded-full bg-[#FF6A00] text-white px-2 py-0.5 text-[10px] font-bold">
               Ativa
             </span>
           </div>
           <p className="text-[11px] text-[#64748B] leading-relaxed">
-            Operação de migração de clientes em condomínios para dobro de velocidade.
+            Objetivo: Upgrade de 50 Mega para 100 Mega, troca de roteador e aplicação de NPS para geração de indicações através do programa Indique e Ganhe.
           </p>
         </div>
       </div>
 
-      {/* Bottom Status */}
+      {/* Bottom Status Atualizado: Sistema - Sincronizado */}
       <div className="border-t border-[#E2E8F0] p-4">
-        <div className="flex items-center gap-2.5 rounded-xl bg-[#F8FAFC] px-3.5 py-2 text-xs border border-[#E2E8F0]">
+        <div className="flex items-center gap-2.5 rounded-xl bg-[#F8FAFC] px-3.5 py-2.5 text-xs border border-[#E2E8F0]">
           <Database className="h-4 w-4 text-[#FF6A00] animate-pulse" />
           <div className="flex flex-col">
-            <span className="font-bold text-[#0B0B0D]">Supabase DB</span>
-            <span className="text-[10px] text-[#16A34A] font-semibold">Online & Sincronizado</span>
+            <span className="font-bold text-[#0B0B0D]">Sistema</span>
+            <span className="text-[10px] text-[#16A34A] font-semibold">Sincronizado</span>
           </div>
         </div>
       </div>

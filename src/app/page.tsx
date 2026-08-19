@@ -13,6 +13,7 @@ import { ChartsOverview } from "@/components/dashboard/charts-overview";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DataService } from "@/lib/data-service";
+import { formatPhone } from "@/lib/utils";
 import { Client, DashboardMetrics } from "@/types/database";
 
 export default function DashboardPage() {
@@ -60,7 +61,7 @@ export default function DashboardPage() {
             Painel Comercial
           </h1>
           <p className="text-xs md:text-sm text-[#64748B]">
-            Acompanhe o funil de migração dos condomínios, NPS e taxa de conversão em tempo real.
+            Acompanhe o funil de migração, NPS e taxa de conversão em tempo real.
           </p>
         </div>
 
@@ -106,7 +107,7 @@ export default function DashboardPage() {
                   <div key={client.id} className="py-2.5 flex items-center justify-between">
                     <div>
                       <div className="text-sm font-semibold text-[#0B0B0D]">{client.name}</div>
-                      <div className="text-xs text-[#64748B]">{client.phone} • {client.condominium || "Condomínio Geral"}</div>
+                      <div className="text-xs text-[#64748B]">{formatPhone(client.phone)}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span
@@ -142,7 +143,7 @@ export default function DashboardPage() {
               <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#FFF4EC] text-[#FF6A00] font-bold text-[10px]">
                 1
               </div>
-              <p>Importe a lista de clientes em <strong>Importação</strong>.</p>
+              <p>Importe a lista de clientes na aba <strong>Importação</strong>.</p>
             </div>
             <div className="flex items-start gap-2.5">
               <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#FFF4EC] text-[#FF6A00] font-bold text-[10px]">
@@ -160,7 +161,7 @@ export default function DashboardPage() {
               <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#FFF4EC] text-[#FF6A00] font-bold text-[10px]">
                 4
               </div>
-              <p>Lance o <strong>NPS</strong> e registre contatos indicados.</p>
+              <p>Lance o <strong>NPS</strong> e registre contatos no programa Indique e Ganhe.</p>
             </div>
           </CardContent>
         </Card>
