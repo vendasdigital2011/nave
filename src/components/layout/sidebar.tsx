@@ -11,6 +11,7 @@ import {
   Settings,
   ArrowUpRight,
   Database,
+  QrCode,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,11 @@ const navigationItems = [
     name: "Conversas",
     href: "/conversas",
     icon: MessageSquare,
+  },
+  {
+    name: "Meu WhatsApp",
+    href: "/whatsapp",
+    icon: QrCode,
   },
   {
     name: "Importação",

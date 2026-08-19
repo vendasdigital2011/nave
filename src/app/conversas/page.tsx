@@ -12,6 +12,9 @@ import {
   Zap,
   Save,
   UserCheck,
+  Send,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +60,10 @@ export default function ConversasPage() {
   const [currentMessage, setCurrentMessage] = useState("");
   const [copied, setCopied] = useState(false);
 
+  // Direct sending state
+  const [isSendingDirect, setIsSendingDirect] = useState(false);
+  const [directSendFeedback, setDirectSendFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
   // Client Data Panel State
   const [clientData, setClientData] = useState<Partial<Client>>({});
   const [isSavingData, setIsSavingData] = useState(false);
@@ -82,6 +89,7 @@ export default function ConversasPage() {
 
   const handleSelectClient = (client: Client) => {
     setSelectedClient(client);
+    setDirectSendFeedback(null);
     setClientData({
       status: client.status,
       nps_score: client.nps_score,
@@ -118,6 +126,38 @@ export default function ConversasPage() {
     navigator.clipboard.writeText(currentMessage);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSendViaEvolution = async () => {
+    if (!selectedClient || !currentMessage) return;
+    setIsSendingDirect(true);
+    setDirectSendFeedback(null);
+
+    try {
+      const res = await fetch("/api/evolution/message/sendText", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          number: selectedClient.phone,
+          text: currentMessage,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setDirectSendFeedback({ type: "success", text: "Mensagem enviada com sucesso via Evolution API!" });
+        // Se estava frio, passa automaticamente para morno
+        if (selectedClient.status === "frio") {
+          handleQuickStatusChange("morno");
+        }
+      } else {
+        setDirectSendFeedback({ type: "error", text: "Erro ao enviar via API: " + (data.error || "Tente abrir no WhatsApp Web") });
+      }
+    } catch (err: any) {
+      setDirectSendFeedback({ type: "error", text: "Falha de envio: " + err.message });
+    } finally {
+      setIsSendingDirect(false);
+    }
   };
 
   const handleQuickStatusChange = async (newStatus: ClientStatus) => {
@@ -314,8 +354,41 @@ export default function ConversasPage() {
                 />
               </div>
 
-              {/* Botões de Ação WhatsApp em Laranja Navetech */}
-              <div className="pt-2 flex flex-col sm:flex-row gap-2.5 border-t border-[#E2E8F0]">
+              {/* Feedback de envio direto se houver */}
+              {directSendFeedback && (
+                <div
+                  className={`text-xs p-2.5 rounded-xl border flex items-center gap-2 ${
+                    directSendFeedback.type === "success"
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                      : "bg-rose-50 border-rose-200 text-rose-800"
+                  }`}
+                >
+                  {directSendFeedback.type === "success" ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+                  )}
+                  <span>{directSendFeedback.text}</span>
+                </div>
+              )}
+
+              {/* Botões de Ação WhatsApp: Envio Direto API + Web + App */}
+              <div className="pt-2 flex flex-col sm:flex-row gap-2 border-t border-[#E2E8F0]">
+                {/* 1. Enviar Direto via Evolution API */}
+                <Button
+                  onClick={handleSendViaEvolution}
+                  disabled={isSendingDirect}
+                  className="bg-[#0B0B0D] hover:bg-black text-white font-bold py-2.5 px-3.5 text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5"
+                >
+                  {isSendingDirect ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Send className="h-3.5 w-3.5 text-[#FF6A00]" />
+                  )}
+                  <span>Disparo Direto (API)</span>
+                </Button>
+
+                {/* 2. WhatsApp Web */}
                 <a
                   href={getWhatsAppWebUrl()}
                   target="_blank"
@@ -323,10 +396,11 @@ export default function ConversasPage() {
                   className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#FF6A00] hover:bg-[#E85C00] text-white font-bold py-2.5 px-4 text-xs shadow-md shadow-[#FF6A00]/20 transition-all active:scale-[0.98]"
                 >
                   <MessageSquare className="h-4 w-4" />
-                  <span>Abrir no WhatsApp Web</span>
+                  <span>WhatsApp Web</span>
                   <ExternalLink className="h-3.5 w-3.5 opacity-70" />
                 </a>
 
+                {/* 3. WhatsApp Celular */}
                 <a
                   href={getWhatsAppMobileUrl()}
                   target="_blank"
