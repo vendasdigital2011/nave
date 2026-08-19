@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Radio,
   Lock,
   Mail,
   Eye,
@@ -51,69 +50,68 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] p-4 sm:p-6 text-[#0F172A]">
+    <div className="flex min-h-screen items-center justify-center bg-[#F8F8FA] p-4 sm:p-6 text-[#0B0B0D]">
       <div className="w-full max-w-md">
         {/* Logo and Brand */}
-        <div className="mb-6 text-center">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#2563EB] text-white shadow-sm mb-3">
-            <Radio className="h-6 w-6" />
-          </div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0F172A]">
-            NAVETECH
-          </h1>
-          <p className="text-xs text-[#64748B] mt-0.5">
-            NaveProspect • Gestão & Upgrade Comercial
-          </p>
+        <div className="mb-8 text-center flex flex-col items-center">
+          <img
+            src="/images/brand/navetech-logo.webp"
+            alt="Navetech Telecom"
+            className="h-11 w-auto mb-2 object-contain"
+          />
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold tracking-wider text-[#FF6A00] uppercase bg-[#FFF4EC] px-2.5 py-0.5 rounded-full border border-[#FFD0A8]">
+            NaveProspect CRM
+          </span>
         </div>
 
         {/* Card Form */}
-        <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 sm:p-8 shadow-sm">
+        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6 sm:p-8 shadow-sm">
           <div className="mb-6 flex items-center justify-between border-b border-[#E2E8F0] pb-4">
             <div>
-              <h2 className="text-base font-semibold text-[#0F172A]">Acesso Restrito</h2>
-              <p className="text-xs text-[#64748B]">Informe suas credenciais para acessar</p>
+              <h2 className="text-base font-bold text-[#0B0B0D]">Acesso Restrito</h2>
+              <p className="text-xs text-[#64748B]">Informe suas credenciais para acessar o painel</p>
             </div>
-            <ShieldCheck className="h-5 w-5 text-[#2563EB]" />
+            <ShieldCheck className="h-5 w-5 text-[#FF6A00]" />
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* E-mail */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#0F172A]">
+              <label className="text-xs font-bold text-[#0B0B0D]">
                 E-mail ou Usuário
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-[#64748B]" />
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-[#64748B]" />
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="seu-email@navetech.com.br"
                   required
-                  className="pl-9 bg-white border-[#E2E8F0] text-[#0F172A] placeholder:text-[#64748B] focus-visible:ring-[#2563EB] text-xs sm:text-sm h-10 rounded-lg"
+                  className="pl-9 bg-[#F8FAFC] border-[#E2E8F0] text-[#0B0B0D] placeholder:text-[#64748B] focus-visible:ring-[#FF6A00] focus-visible:border-[#FF6A00] text-xs sm:text-sm h-11 rounded-xl"
                 />
               </div>
             </div>
 
             {/* Senha */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#0F172A]">
+              <label className="text-xs font-bold text-[#0B0B0D]">
                 Senha de Acesso
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-[#64748B]" />
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-[#64748B]" />
                 <Input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="pl-9 pr-9 bg-white border-[#E2E8F0] text-[#0F172A] placeholder:text-[#64748B] focus-visible:ring-[#2563EB] text-xs sm:text-sm h-10 rounded-lg"
+                  className="pl-9 pr-9 bg-[#F8FAFC] border-[#E2E8F0] text-[#0B0B0D] placeholder:text-[#64748B] focus-visible:ring-[#FF6A00] focus-visible:border-[#FF6A00] text-xs sm:text-sm h-11 rounded-xl"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-[#64748B] hover:text-[#0F172A]"
+                  className="absolute right-3.5 top-3.5 text-[#64748B] hover:text-[#0B0B0D]"
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -126,17 +124,17 @@ export default function LoginPage() {
 
             {/* Erro */}
             {error && (
-              <div className="flex items-center gap-2 rounded-lg bg-rose-50 p-3 text-xs text-rose-700 border border-rose-200">
+              <div className="flex items-center gap-2 rounded-xl bg-rose-50 p-3 text-xs text-rose-700 border border-rose-200">
                 <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
                 <span>{error}</span>
               </div>
             )}
 
-            {/* Botão Entrar com Azul de Ação #2563EB */}
+            {/* Botão Entrar com Laranja Navetech #FF6A00 */}
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium h-10 rounded-lg shadow-sm transition-colors mt-2"
+              className="w-full bg-[#FF6A00] hover:bg-[#E85C00] text-white font-bold h-11 rounded-xl shadow-md shadow-[#FF6A00]/20 transition-all active:scale-[0.98] mt-3"
             >
               {isLoading ? (
                 <>
@@ -152,7 +150,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="mt-6 text-center text-xs text-[#64748B]">
-          Navetech Telecom • Todos os direitos reservados
+          NAVETECH TELECOM • Todos os direitos reservados
         </p>
       </div>
     </div>

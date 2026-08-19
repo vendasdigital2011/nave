@@ -1,38 +1,25 @@
 # DESIGN SYSTEM NAVETECH
 
-## Referência Visual Obrigatória
+## Referência Visual Oficial
 - https://navetech.com.br
-- O CRM deve parecer uma extensão natural do site institucional.
+- Logotipo oficial: `/images/brand/navetech-logo.webp`
+- Favicon oficial: `/images/brand/favicon.png`
 
-## Princípios
-- Branco (#FFFFFF)
-- Cinzas suaves (#F8FAFC, #E2E8F0, #CBD5E1)
-- Preto suave (#0F172A)
-- Bordas discretas (#E2E8F0)
-- Espaçamento amplo
-- Cards minimalistas com sombra muito leve
-- Azul (#2563EB) APENAS como cor de ação
+## Paleta de Cores Oficial
+- **Primary (Laranja Navetech):** `#FF6A00`
+- **Primary Hover:** `#E85C00`
+- **Primary Light / Accent:** `#FFF4EC` e `#FFF7F1` (Bordas: `#FFD0A8`)
+- **Dark (Grafite / Preto):** `#0B0B0D` e `#17181C`
+- **Background Principal:** `#FFFFFF` e `#F8FAFC`
+- **Cards & Superfícies:** `#FFFFFF` (Borda: `#E2E8F0`, sombra muito leve)
+- **Texto Principal:** `#0B0B0D`
+- **Texto Secundário:** `#64748B`
 
-## Paleta Exata
-- Background Principal: #FFFFFF
-- Surface: #F8FAFC
-- Card: #FFFFFF (border #E2E8F0, shadow muito leve)
-- Text Primary: #0F172A
-- Text Secondary: #64748B
-- Border: #E2E8F0
-- Divider: #CBD5E1
-- Primary (Ação): #2563EB
-- Primary Hover: #1D4ED8
-
-## Sidebar
-- Background: #FFFFFF
-- Border-right: 1px solid #E2E8F0
-
-## Funil / Kanban
-- Frio: #CBD5E1
-- Morno: #F59E0B
-- Quente: #2563EB
-- Vendido: #22C55E
+## Cores do Funil / Kanban
+- **Frio:** `#94A3B8` (Cinza)
+- **Morno:** `#F59E0B` (Âmbar)
+- **Quente:** `#FF6A00` (Laranja Navetech)
+- **Vendido:** `#22C55E` (Verde)
 
 ## Estrutura da Central de Conversas (3 Colunas)
 ┌──────────┬─────────────┬──────────┐

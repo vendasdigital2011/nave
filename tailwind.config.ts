@@ -9,35 +9,37 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        navetech: {
+          50: "#FFF7F1",
+          100: "#FFF4EC",
+          200: "#FFD0A8",
+          300: "#FFA86B",
+          400: "#FF8A1F",
+          500: "#FF6A00", // Laranja Oficial Navetech
+          600: "#FF7A00",
+          700: "#E85C00",
+          800: "#CC4F00",
+          900: "#803200",
+        },
         surface: "#F8FAFC",
         border: "#E2E8F0",
         divider: "#CBD5E1",
-        "text-primary": "#0F172A",
-        "text-secondary": "#64748B",
         primary: {
-          DEFAULT: "#2563EB",
-          hover: "#1D4ED8",
+          DEFAULT: "#FF6A00",
+          hover: "#E85C00",
           foreground: "#FFFFFF",
         },
         funnel: {
-          frio: "#CBD5E1",
+          frio: "#94A3B8",
           morno: "#F59E0B",
-          quente: "#2563EB",
+          quente: "#FF6A00",
           vendido: "#22C55E",
-        },
-        card: {
-          DEFAULT: "#FFFFFF",
-          foreground: "#0F172A",
         },
       },
       borderRadius: {
-        lg: "0.5rem",
-        md: "calc(0.5rem - 2px)",
-        sm: "calc(0.5rem - 4px)",
-      },
-      boxShadow: {
-        subtle: "0 1px 2px 0 rgba(0, 0, 0, 0.03)",
-        card: "0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04)",
+        lg: "0.625rem",
+        md: "calc(0.625rem - 2px)",
+        sm: "calc(0.625rem - 4px)",
       },
     },
   },
