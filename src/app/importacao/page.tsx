@@ -8,10 +8,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  Database,
   ArrowRight,
   Sparkles,
-  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -163,11 +161,10 @@ export default function ImportacaoPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <Upload className="h-6 w-6 text-blue-600" />
+        <h1 className="text-xl md:text-2xl font-bold text-[#0F172A] tracking-tight">
           Importação de Planilhas
         </h1>
-        <p className="text-xs md:text-sm text-slate-500">
+        <p className="text-xs md:text-sm text-[#64748B]">
           Carregue planilhas de clientes (XLSX, XLS ou CSV) para abastecer o funil comercial do NaveProspect.
         </p>
       </div>
@@ -175,13 +172,13 @@ export default function ImportacaoPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Upload Box */}
         <div className="md:col-span-2 space-y-4">
-          <Card className="bg-white border-slate-200 shadow-sm">
+          <Card className="bg-white border-[#E2E8F0] shadow-sm">
             <CardHeader>
-              <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <FileSpreadsheet className="h-5 w-5 text-blue-600" />
-                Upload do Arquivo
+              <CardTitle className="text-sm font-semibold text-[#0F172A] flex items-center gap-2">
+                <FileSpreadsheet className="h-4 w-4 text-[#2563EB]" />
+                Upload de Planilha
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs text-[#64748B]">
                 Selecione a planilha com as colunas de clientes 50 Mega para processamento automático.
               </CardDescription>
             </CardHeader>
@@ -190,15 +187,15 @@ export default function ImportacaoPage() {
               {!file && (
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/70 p-10 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/40 transition-all group"
+                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#E2E8F0] bg-[#F8FAFC] p-10 text-center cursor-pointer hover:border-[#2563EB] hover:bg-[#EFF6FF]/40 transition-all group"
                 >
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-blue-600 mb-3 group-hover:scale-110 transition-transform">
-                    <Upload className="h-7 w-7" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EFF6FF] text-[#2563EB] mb-3 group-hover:scale-105 transition-transform">
+                    <Upload className="h-6 w-6" />
                   </div>
-                  <span className="text-sm font-bold text-slate-800">
+                  <span className="text-xs font-semibold text-[#0F172A]">
                     Clique aqui ou arraste seu arquivo
                   </span>
-                  <span className="text-xs text-slate-500 mt-1">
+                  <span className="text-[11px] text-[#64748B] mt-1">
                     Formatos suportados: .xlsx, .xls, .csv
                   </span>
                   <input
@@ -212,15 +209,15 @@ export default function ImportacaoPage() {
               )}
 
               {file && (
-                <div className="rounded-xl border bg-slate-50 p-4 space-y-4">
+                <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white font-bold">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#2563EB] text-white font-bold">
                         <FileSpreadsheet className="h-5 w-5" />
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-slate-900">{file.name}</div>
-                        <div className="text-xs text-slate-500">
+                        <div className="text-xs font-bold text-[#0F172A]">{file.name}</div>
+                        <div className="text-[11px] text-[#64748B]">
                           {records.length} registros válidos identificados
                         </div>
                       </div>
@@ -229,33 +226,33 @@ export default function ImportacaoPage() {
                       variant="ghost"
                       size="sm"
                       onClick={resetState}
-                      className="text-xs text-slate-500 hover:text-rose-600"
+                      className="text-xs text-[#64748B] hover:text-rose-600"
                     >
                       Remover
                     </Button>
                   </div>
 
                   {records.length > 0 && !importedCount && (
-                    <div className="border-t pt-3">
-                      <span className="text-xs font-semibold text-slate-700 block mb-2">
-                        Prévia dos dados identificados:
+                    <div className="border-t border-[#E2E8F0] pt-3">
+                      <span className="text-xs font-semibold text-[#0F172A] block mb-2">
+                        Prévia dos dados:
                       </span>
                       <div className="max-h-48 overflow-y-auto space-y-1.5 text-xs">
-                        {records.slice(0, 6).map((r, i) => (
+                        {records.slice(0, 5).map((r, i) => (
                           <div
                             key={i}
-                            className="flex items-center justify-between bg-white p-2.5 rounded-lg border text-slate-800"
+                            className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-[#E2E8F0] text-[#0F172A]"
                           >
-                            <span className="font-bold truncate max-w-[200px]">{r.name}</span>
-                            <span className="text-slate-500 font-mono">{r.phone}</span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 uppercase">
+                            <span className="font-semibold truncate max-w-[200px]">{r.name}</span>
+                            <span className="text-[#64748B] font-mono text-[11px]">{r.phone}</span>
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#F1F5F9] text-[#475569] uppercase">
                               {r.status}
                             </span>
                           </div>
                         ))}
-                        {records.length > 6 && (
-                          <div className="text-center text-[11px] text-slate-400 py-1">
-                            + {records.length - 6} outros clientes na lista
+                        {records.length > 5 && (
+                          <div className="text-center text-[11px] text-[#64748B] py-1">
+                            + {records.length - 5} outros clientes na lista
                           </div>
                         )}
                       </div>
@@ -271,20 +268,20 @@ export default function ImportacaoPage() {
 
                   {importedCount !== null && (
                     <div className="flex flex-col items-center justify-center p-6 rounded-xl bg-emerald-50 border border-emerald-200 text-center space-y-2">
-                      <CheckCircle2 className="h-10 w-10 text-emerald-600" />
-                      <h3 className="text-sm font-bold text-emerald-900">
+                      <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+                      <h3 className="text-xs font-bold text-emerald-900">
                         {importedCount} clientes importados com sucesso!
                       </h3>
-                      <p className="text-xs text-emerald-700 max-w-sm">
-                        Os contatos já estão disponíveis no Kanban e na lista de clientes para abordagem.
+                      <p className="text-[11px] text-emerald-700 max-w-sm">
+                        Os contatos já estão disponíveis no Kanban e na lista de clientes.
                       </p>
-                      <div className="flex gap-2 mt-3">
+                      <div className="flex gap-2 mt-2">
                         <Link href="/kanban">
-                          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold">
-                            Ver no Kanban <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                          <Button size="sm" className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-medium">
+                            Ver no Kanban <ArrowRight className="ml-1 h-3 w-3" />
                           </Button>
                         </Link>
-                        <Button variant="outline" size="sm" onClick={resetState} className="text-xs">
+                        <Button variant="outline" size="sm" onClick={resetState} className="text-xs border-[#E2E8F0]">
                           Nova Importação
                         </Button>
                       </div>
@@ -295,14 +292,14 @@ export default function ImportacaoPage() {
             </CardContent>
 
             {records.length > 0 && importedCount === null && (
-              <CardFooter className="border-t pt-4 flex justify-end gap-2">
-                <Button variant="outline" onClick={resetState} disabled={isLoading} className="text-xs">
+              <CardFooter className="border-t border-[#E2E8F0] pt-4 flex justify-end gap-2">
+                <Button variant="outline" onClick={resetState} disabled={isLoading} className="text-xs border-[#E2E8F0]">
                   Cancelar
                 </Button>
                 <Button
                   onClick={handleImport}
                   disabled={isLoading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold"
+                  className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-medium"
                 >
                   {isLoading ? (
                     <>
@@ -310,7 +307,7 @@ export default function ImportacaoPage() {
                       Processando...
                     </>
                   ) : (
-                    `Confirmar Importação de ${records.length} Clientes`
+                    `Confirmar Importação (${records.length} Clientes)`
                   )}
                 </Button>
               </CardFooter>
@@ -318,39 +315,27 @@ export default function ImportacaoPage() {
           </Card>
         </div>
 
-        {/* Instructions & Guidelines */}
+        {/* Instructions */}
         <div className="space-y-4">
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-[#E2E8F0] shadow-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-bold text-slate-800">
+              <CardTitle className="text-xs font-semibold text-[#0F172A]">
                 Padrão de Colunas
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2.5 text-xs text-slate-600">
-              <div className="p-2 rounded bg-slate-50 border">
-                <span className="font-bold text-slate-800 block">Nome do Cliente:</span>
-                <span className="text-[11px] text-slate-500">Colunas com "CLIENTE", "NOME"</span>
+            <CardContent className="space-y-2 text-xs text-[#64748B]">
+              <div className="p-2 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0]">
+                <span className="font-semibold text-[#0F172A] block">Nome:</span>
+                <span className="text-[11px] text-[#64748B]">Colunas com "CLIENTE", "NOME"</span>
               </div>
-              <div className="p-2 rounded bg-slate-50 border">
-                <span className="font-bold text-slate-800 block">WhatsApp / Telefone:</span>
-                <span className="text-[11px] text-slate-500">Colunas com "CONTATO", "TELEFONE"</span>
+              <div className="p-2 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0]">
+                <span className="font-semibold text-[#0F172A] block">Contato:</span>
+                <span className="text-[11px] text-[#64748B]">Colunas com "CONTATO", "TELEFONE"</span>
               </div>
-              <div className="p-2 rounded bg-slate-50 border">
-                <span className="font-bold text-slate-800 block">Feedbacks / Observações:</span>
-                <span className="text-[11px] text-slate-500">Colunas com "FEEDBECK", "OBS", "STATUS"</span>
+              <div className="p-2 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0]">
+                <span className="font-semibold text-[#0F172A] block">Feedbacks:</span>
+                <span className="text-[11px] text-[#64748B]">Colunas com "FEEDBECK", "OBS"</span>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-blue-50/60 border-blue-200">
-            <CardContent className="p-4 space-y-2 text-xs text-blue-950">
-              <div className="font-bold flex items-center gap-1.5">
-                <Sparkles className="h-4 w-4 text-blue-600" />
-                Mapeamento Inteligente
-              </div>
-              <p className="text-blue-900 leading-relaxed text-[11px]">
-                O importador do NaveProspect reconhece automaticamente o formato padrão da planilha de condomínios da Navetech.
-              </p>
             </CardContent>
           </Card>
         </div>

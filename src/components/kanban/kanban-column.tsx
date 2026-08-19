@@ -14,9 +14,7 @@ interface KanbanColumnProps {
   title: string;
   emoji: string;
   clients: Client[];
-  color: string;
-  badgeBg: string;
-  badgeText: string;
+  accentColor: string;
   onSelectClient: (client: Client) => void;
 }
 
@@ -25,9 +23,7 @@ export function KanbanColumn({
   title,
   emoji,
   clients,
-  color,
-  badgeBg,
-  badgeText,
+  accentColor,
   onSelectClient,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
@@ -36,19 +32,20 @@ export function KanbanColumn({
 
   return (
     <div
-      className={`flex flex-col rounded-xl border bg-slate-100/70 p-3 min-w-[280px] max-w-[320px] flex-1 transition-all ${
-        isOver ? "bg-blue-50/80 ring-2 ring-blue-400" : ""
+      className={`flex flex-col rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 min-w-[280px] max-w-[320px] flex-1 transition-all ${
+        isOver ? "bg-[#EFF6FF] border-[#2563EB]" : ""
       }`}
     >
       {/* Column Header */}
-      <div className="flex items-center justify-between pb-3 px-1">
+      <div className="flex items-center justify-between pb-3 px-1 border-b border-[#E2E8F0] mb-2.5">
         <div className="flex items-center gap-2">
-          <span className="text-base">{emoji}</span>
-          <h3 className="font-bold text-sm text-slate-800 tracking-tight">{title}</h3>
+          <span
+            className="h-2.5 w-2.5 rounded-full"
+            style={{ backgroundColor: accentColor }}
+          />
+          <h3 className="font-semibold text-xs text-[#0F172A] tracking-tight">{title}</h3>
         </div>
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs font-bold ${badgeBg} ${badgeText}`}
-        >
+        <span className="rounded-md bg-white border border-[#E2E8F0] px-2 py-0.5 text-[11px] font-semibold text-[#64748B]">
           {clients.length}
         </span>
       </div>
@@ -56,7 +53,7 @@ export function KanbanColumn({
       {/* Droppable Area */}
       <div
         ref={setNodeRef}
-        className="flex-1 flex flex-col gap-2.5 min-h-[500px] overflow-y-auto max-h-[calc(100vh-230px)] pr-1"
+        className="flex-1 flex flex-col gap-2 min-h-[500px] overflow-y-auto max-h-[calc(100vh-230px)] pr-0.5"
       >
         <SortableContext
           items={clients.map((c) => c.id)}
@@ -72,7 +69,7 @@ export function KanbanColumn({
         </SortableContext>
 
         {clients.length === 0 && (
-          <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 p-6 text-center text-xs text-slate-400">
+          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-[#E2E8F0] p-6 text-center text-xs text-[#64748B]">
             Nenhum cliente nesta etapa
           </div>
         )}

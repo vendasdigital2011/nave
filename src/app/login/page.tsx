@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Zap,
+  Radio,
   Lock,
   Mail,
   Eye,
@@ -51,75 +51,69 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-4 sm:p-6">
-      {/* Background glow effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-blue-600/20 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-indigo-600/20 blur-3xl" />
-      </div>
-
-      <div className="relative z-10 w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] p-4 sm:p-6 text-[#0F172A]">
+      <div className="w-full max-w-md">
         {/* Logo and Brand */}
         <div className="mb-6 text-center">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-xl shadow-blue-500/30 mb-3">
-            <Zap className="h-8 w-8" />
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#2563EB] text-white shadow-sm mb-3">
+            <Radio className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-            NaveProspect
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0F172A]">
+            NAVETECH
           </h1>
-          <p className="text-xs sm:text-sm text-blue-200/80 mt-1">
-            Painel Comercial & Gestão de Clientes
+          <p className="text-xs text-[#64748B] mt-0.5">
+            NaveProspect • Gestão & Upgrade Comercial
           </p>
         </div>
 
         {/* Card Form */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
-          <div className="mb-5 flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 sm:p-8 shadow-sm">
+          <div className="mb-6 flex items-center justify-between border-b border-[#E2E8F0] pb-4">
             <div>
-              <h2 className="text-base font-bold text-white">Acesso Restrito</h2>
-              <p className="text-xs text-slate-400">Informe suas credenciais para acessar</p>
+              <h2 className="text-base font-semibold text-[#0F172A]">Acesso Restrito</h2>
+              <p className="text-xs text-[#64748B]">Informe suas credenciais para acessar</p>
             </div>
-            <ShieldCheck className="h-5 w-5 text-emerald-400" />
+            <ShieldCheck className="h-5 w-5 text-[#2563EB]" />
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* E-mail / Usuário */}
+            {/* E-mail */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">
+              <label className="text-xs font-semibold text-[#0F172A]">
                 E-mail ou Usuário
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-[#64748B]" />
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="seu-email@navetech.com.br"
                   required
-                  className="pl-9 bg-slate-800/80 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-blue-500 text-xs sm:text-sm h-10"
+                  className="pl-9 bg-white border-[#E2E8F0] text-[#0F172A] placeholder:text-[#64748B] focus-visible:ring-[#2563EB] text-xs sm:text-sm h-10 rounded-lg"
                 />
               </div>
             </div>
 
             {/* Senha */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">
+              <label className="text-xs font-semibold text-[#0F172A]">
                 Senha de Acesso
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-[#64748B]" />
                 <Input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="pl-9 pr-9 bg-slate-800/80 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-blue-500 text-xs sm:text-sm h-10"
+                  className="pl-9 pr-9 bg-white border-[#E2E8F0] text-[#0F172A] placeholder:text-[#64748B] focus-visible:ring-[#2563EB] text-xs sm:text-sm h-10 rounded-lg"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300"
+                  className="absolute right-3 top-2.5 text-[#64748B] hover:text-[#0F172A]"
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -130,19 +124,19 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Mensagem de Erro */}
+            {/* Erro */}
             {error && (
-              <div className="flex items-center gap-2 rounded-lg bg-rose-500/10 p-3 text-xs text-rose-300 border border-rose-500/20">
-                <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+              <div className="flex items-center gap-2 rounded-lg bg-rose-50 p-3 text-xs text-rose-700 border border-rose-200">
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
                 <span>{error}</span>
               </div>
             )}
 
-            {/* Botão Entrar */}
+            {/* Botão Entrar com Azul de Ação #2563EB */}
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold h-10 shadow-lg shadow-blue-600/30 transition-all active:scale-[0.98] mt-2"
+              className="w-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium h-10 rounded-lg shadow-sm transition-colors mt-2"
             >
               {isLoading ? (
                 <>
@@ -157,8 +151,8 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="mt-6 text-center text-xs text-slate-500">
-          NaveProspect • Todos os direitos reservados
+        <p className="mt-6 text-center text-xs text-[#64748B]">
+          Navetech Telecom • Todos os direitos reservados
         </p>
       </div>
     </div>

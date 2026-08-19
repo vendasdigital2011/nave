@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { Client } from "@/types/database";
 import { formatPhone, getCleanPhoneForWhatsApp } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 
 interface ClientCardProps {
   client: Client;
@@ -51,16 +50,16 @@ export function ClientCard({ client, onSelectClient, isOverlay = false }: Client
     <div
       ref={setNodeRef}
       style={style}
-      className={`group relative flex flex-col rounded-xl border bg-white p-3.5 shadow-sm hover:shadow-md transition-all cursor-pointer ${
-        isOverlay ? "shadow-2xl ring-2 ring-blue-500 scale-105 z-50" : ""
+      className={`group relative flex flex-col rounded-lg border border-[#E2E8F0] bg-white p-3.5 shadow-sm hover:border-[#CBD5E1] transition-all cursor-pointer ${
+        isOverlay ? "shadow-lg ring-1 ring-[#2563EB] scale-105 z-50" : ""
       }`}
       onClick={() => onSelectClient(client)}
     >
-      {/* Top row: Drag handle, Condominium / Plan */}
-      <div className="flex items-center justify-between gap-1 text-[11px] text-slate-400 mb-1.5">
-        <div className="flex items-center gap-1.5 truncate">
-          <Building className="h-3 w-3 shrink-0" />
-          <span className="truncate max-w-[130px] font-medium text-slate-500">
+      {/* Top row: Condominium & Drag Handle */}
+      <div className="flex items-center justify-between gap-1 text-[11px] text-[#64748B] mb-1.5">
+        <div className="flex items-center gap-1 truncate">
+          <Building className="h-3 w-3 shrink-0 text-[#94A3B8]" />
+          <span className="truncate max-w-[140px] font-medium text-[#64748B]">
             {client.condominium || "Condomínio Geral"}
           </span>
         </div>
@@ -68,36 +67,36 @@ export function ClientCard({ client, onSelectClient, isOverlay = false }: Client
           {...attributes}
           {...listeners}
           onClick={(e) => e.stopPropagation()}
-          className="cursor-grab active:cursor-grabbing p-0.5 rounded text-slate-300 hover:text-slate-600 hover:bg-slate-100"
+          className="cursor-grab active:cursor-grabbing p-0.5 rounded text-[#CBD5E1] hover:text-[#64748B] hover:bg-[#F8FAFC]"
         >
           <GripVertical className="h-3.5 w-3.5" />
         </div>
       </div>
 
       {/* Client Name */}
-      <div className="text-sm font-bold text-slate-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
+      <div className="text-xs font-semibold text-[#0F172A] line-clamp-1 group-hover:text-[#2563EB] transition-colors">
         {client.name}
       </div>
 
       {/* Phone */}
-      <div className="text-xs text-slate-500 font-medium mt-0.5">
+      <div className="text-[11px] text-[#64748B] font-mono mt-0.5">
         {formatPhone(client.phone)}
       </div>
 
       {/* Badges / Indicators */}
       <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
-        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+        <span className="rounded bg-[#F1F5F9] px-1.5 py-0.5 text-[10px] font-medium text-[#475569]">
           50M → 100M
         </span>
 
         {client.nps_score !== null && client.nps_score !== undefined && (
           <span
-            className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-bold ${
+            className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
               client.nps_score >= 9
-                ? "bg-emerald-100 text-emerald-800"
+                ? "bg-[#DCFCE7] text-[#15803D]"
                 : client.nps_score >= 7
-                ? "bg-amber-100 text-amber-800"
-                : "bg-rose-100 text-rose-800"
+                ? "bg-[#FEF3C7] text-[#B45309]"
+                : "bg-[#FEE2E2] text-[#B91C1C]"
             }`}
           >
             <Star className="h-2.5 w-2.5 fill-current" />
@@ -106,23 +105,23 @@ export function ClientCard({ client, onSelectClient, isOverlay = false }: Client
         )}
 
         {client.wants_upgrade && (
-          <span className="inline-flex items-center gap-0.5 rounded bg-blue-100 text-blue-800 px-1.5 py-0.5 text-[10px] font-bold">
+          <span className="inline-flex items-center gap-0.5 rounded bg-[#EFF6FF] text-[#2563EB] px-1.5 py-0.5 text-[10px] font-semibold">
             <Zap className="h-2.5 w-2.5 fill-current" />
             Interesse
           </span>
         )}
 
         {client.gave_referral && (
-          <span className="inline-flex items-center gap-0.5 rounded bg-purple-100 text-purple-800 px-1.5 py-0.5 text-[10px] font-bold">
+          <span className="inline-flex items-center gap-0.5 rounded bg-[#F3E8FF] text-[#7E22CE] px-1.5 py-0.5 text-[10px] font-semibold">
             <UserCheck className="h-2.5 w-2.5" />
             Indicação
           </span>
         )}
       </div>
 
-      {/* Card Footer: WhatsApp Direct Action */}
-      <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
-        <span className="text-[10px] text-slate-400">
+      {/* Card Footer: WhatsApp Action */}
+      <div className="mt-3 pt-2 border-t border-[#F1F5F9] flex items-center justify-between">
+        <span className="text-[10px] text-[#94A3B8]">
           {new Date(client.created_at).toLocaleDateString("pt-BR", {
             day: "2-digit",
             month: "2-digit",
@@ -134,7 +133,7 @@ export function ClientCard({ client, onSelectClient, isOverlay = false }: Client
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-600 hover:text-white transition-all shadow-xs"
+          className="inline-flex items-center gap-1 rounded bg-[#EFF6FF] px-2 py-0.5 text-[11px] font-medium text-[#2563EB] hover:bg-[#2563EB] hover:text-white transition-colors"
         >
           <MessageSquare className="h-3 w-3" />
           <span>WhatsApp</span>

@@ -23,41 +23,31 @@ const COLUMNS: {
   id: ClientStatus;
   title: string;
   emoji: string;
-  color: string;
-  badgeBg: string;
-  badgeText: string;
+  accentColor: string;
 }[] = [
   {
     id: "frio",
     title: "Frio (A Iniciar)",
     emoji: "❄️",
-    color: "border-blue-200",
-    badgeBg: "bg-blue-100",
-    badgeText: "text-blue-800",
+    accentColor: "#CBD5E1", // Frio #CBD5E1
   },
   {
     id: "morno",
     title: "Morno (Em Contato)",
     emoji: "🌤️",
-    color: "border-amber-200",
-    badgeBg: "bg-amber-100",
-    badgeText: "text-amber-800",
+    accentColor: "#F59E0B", // Morno #F59E0B
   },
   {
     id: "quente",
     title: "Quente (Interessado)",
     emoji: "🔥",
-    color: "border-orange-200",
-    badgeBg: "bg-orange-100",
-    badgeText: "text-orange-800",
+    accentColor: "#2563EB", // Quente #2563EB
   },
   {
     id: "vendido",
     title: "Vendido (Upgrade Feito)",
     emoji: "🏆",
-    color: "border-emerald-200",
-    badgeBg: "bg-emerald-100",
-    badgeText: "text-emerald-800",
+    accentColor: "#22C55E", // Vendido #22C55E
   },
 ];
 
@@ -115,11 +105,9 @@ export function KanbanBoard() {
     const clientId = active.id as string;
     let targetStatus: ClientStatus | null = null;
 
-    // Se soltou em cima de uma coluna
     if (COLUMNS.some((col) => col.id === over.id)) {
       targetStatus = over.id as ClientStatus;
     } else {
-      // Se soltou em cima de outro card
       const overClient = clients.find((c) => c.id === over.id);
       if (overClient) {
         targetStatus = overClient.status;
@@ -129,7 +117,6 @@ export function KanbanBoard() {
     if (targetStatus) {
       const currentClient = clients.find((c) => c.id === clientId);
       if (currentClient && currentClient.status !== targetStatus) {
-        // Atualização otimista
         setClients((prev) =>
           prev.map((c) => (c.id === clientId ? { ...c, status: targetStatus! } : c))
         );
@@ -146,17 +133,17 @@ export function KanbanBoard() {
   return (
     <div className="space-y-4">
       {/* Search and Filters bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-xl border">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-[#E2E8F0] shadow-sm">
         <div className="relative w-full sm:w-80">
           <input
             type="text"
             placeholder="Buscar por nome, telefone ou condomínio..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full text-xs rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full text-xs rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-[#0F172A] placeholder:text-[#64748B] focus:outline-none focus:ring-1 focus:ring-[#2563EB]"
           />
         </div>
-        <div className="flex items-center gap-2 text-xs text-slate-500 w-full sm:w-auto justify-end">
+        <div className="flex items-center gap-2 text-xs text-[#64748B] w-full sm:w-auto justify-end">
           <span>
             Exibindo <strong>{filteredClients.length}</strong> de {clients.length} clientes
           </span>
@@ -180,9 +167,7 @@ export function KanbanBoard() {
                 title={column.title}
                 emoji={column.emoji}
                 clients={columnClients}
-                color={column.color}
-                badgeBg={column.badgeBg}
-                badgeText={column.badgeText}
+                accentColor={column.accentColor}
                 onSelectClient={handleCardClick}
               />
             );

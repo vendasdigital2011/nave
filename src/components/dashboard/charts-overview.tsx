@@ -21,20 +21,20 @@ interface ChartsOverviewProps {
   metrics: DashboardMetrics;
 }
 
-const FUNNEL_COLORS = ["#3b82f6", "#f59e0b", "#f97316", "#10b981"];
-const NPS_COLORS = ["#10b981", "#f59e0b", "#ef4444"];
-const REFERRAL_COLORS = ["#8b5cf6", "#cbd5e1"];
+// Cores Oficiais do Funil:
+// Frio #CBD5E1 | Morno #F59E0B | Quente #2563EB | Vendido #22C55E
+const FUNNEL_COLORS = ["#CBD5E1", "#F59E0B", "#2563EB", "#22C55E"];
+const NPS_COLORS = ["#22C55E", "#F59E0B", "#EF4444"];
+const REFERRAL_COLORS = ["#2563EB", "#E2E8F0"];
 
 export function ChartsOverview({ metrics }: ChartsOverviewProps) {
-  // 1. Dados do Funil Comercial
   const funnelData = [
-    { name: "Frio", valor: metrics.frioCount, fill: "#3b82f6" },
-    { name: "Morno", valor: metrics.mornoCount, fill: "#f59e0b" },
-    { name: "Quente", valor: metrics.quenteCount, fill: "#f97316" },
-    { name: "Vendido", valor: metrics.vendidoCount, fill: "#10b981" },
+    { name: "Frio", valor: metrics.frioCount, fill: "#CBD5E1" },
+    { name: "Morno", valor: metrics.mornoCount, fill: "#F59E0B" },
+    { name: "Quente", valor: metrics.quenteCount, fill: "#2563EB" },
+    { name: "Vendido", valor: metrics.vendidoCount, fill: "#22C55E" },
   ];
 
-  // 2. Dados de Conversão de Upgrade
   const conversionData = [
     { etapa: "Total Base", qtd: metrics.totalClients },
     { etapa: "Abordados", qtd: metrics.totalApproached },
@@ -42,14 +42,12 @@ export function ChartsOverview({ metrics }: ChartsOverviewProps) {
     { etapa: "Vendidos", qtd: metrics.vendidoCount },
   ];
 
-  // 3. Dados de NPS
   const npsData = [
     { name: "Promotores (9-10)", value: metrics.npsPromoters },
     { name: "Neutros (7-8)", value: metrics.npsPassives },
     { name: "Detratores (0-6)", value: metrics.npsDetractors },
   ].filter((item) => item.value > 0);
 
-  // 4. Dados de Indicações
   const referralData = [
     { name: "Com Indicação", value: metrics.referralsCount },
     { name: "Sem Indicação", value: Math.max(0, metrics.totalClients - metrics.referralsCount) },
@@ -58,9 +56,9 @@ export function ChartsOverview({ metrics }: ChartsOverviewProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* Gráfico 1: Funil Comercial */}
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-[#E2E8F0] shadow-sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-bold text-slate-800">
+          <CardTitle className="text-sm font-semibold text-[#0F172A]">
             Funil Comercial (Distribuição por Etapa)
           </CardTitle>
         </CardHeader>
@@ -68,18 +66,19 @@ export function ChartsOverview({ metrics }: ChartsOverviewProps) {
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={funnelData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" fontSize={12} stroke="#64748b" />
-                <YAxis fontSize={12} stroke="#64748b" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                <XAxis dataKey="name" fontSize={12} stroke="#64748B" />
+                <YAxis fontSize={12} stroke="#64748B" />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#1e293b",
+                    backgroundColor: "#0F172A",
                     borderRadius: "8px",
-                    color: "#fff",
+                    color: "#FFF",
                     fontSize: "12px",
+                    border: "none",
                   }}
                 />
-                <Bar dataKey="valor" radius={[6, 6, 0, 0]}>
+                <Bar dataKey="valor" radius={[4, 4, 0, 0]}>
                   {funnelData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
@@ -91,9 +90,9 @@ export function ChartsOverview({ metrics }: ChartsOverviewProps) {
       </Card>
 
       {/* Gráfico 2: Conversão de Upgrade */}
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-[#E2E8F0] shadow-sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-bold text-slate-800">
+          <CardTitle className="text-sm font-semibold text-[#0F172A]">
             Conversão de Upgrade (50M → 100M)
           </CardTitle>
         </CardHeader>
@@ -105,18 +104,19 @@ export function ChartsOverview({ metrics }: ChartsOverviewProps) {
                 layout="vertical"
                 margin={{ top: 10, right: 20, left: 20, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                <XAxis type="number" fontSize={12} stroke="#64748b" />
-                <YAxis type="category" dataKey="etapa" fontSize={12} stroke="#64748b" width={85} />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F1F5F9" />
+                <XAxis type="number" fontSize={12} stroke="#64748B" />
+                <YAxis type="category" dataKey="etapa" fontSize={12} stroke="#64748B" width={85} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#1e293b",
+                    backgroundColor: "#0F172A",
                     borderRadius: "8px",
-                    color: "#fff",
+                    color: "#FFF",
                     fontSize: "12px",
+                    border: "none",
                   }}
                 />
-                <Bar dataKey="qtd" fill="#6366f1" radius={[0, 6, 6, 0]} />
+                <Bar dataKey="qtd" fill="#2563EB" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -124,9 +124,9 @@ export function ChartsOverview({ metrics }: ChartsOverviewProps) {
       </Card>
 
       {/* Gráfico 3: Satisfação NPS */}
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-[#E2E8F0] shadow-sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-bold text-slate-800">
+          <CardTitle className="text-sm font-semibold text-[#0F172A]">
             Distribuição de NPS
           </CardTitle>
         </CardHeader>
@@ -139,8 +139,8 @@ export function ChartsOverview({ metrics }: ChartsOverviewProps) {
                     data={npsData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={85}
+                    innerRadius={55}
+                    outerRadius={80}
                     paddingAngle={3}
                     dataKey="value"
                   >
@@ -150,18 +150,19 @@ export function ChartsOverview({ metrics }: ChartsOverviewProps) {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#1e293b",
+                      backgroundColor: "#0F172A",
                       borderRadius: "8px",
-                      color: "#fff",
+                      color: "#FFF",
                       fontSize: "12px",
+                      border: "none",
                     }}
                   />
                   <Legend verticalAlign="bottom" height={36} iconType="circle" />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="text-xs text-slate-400 text-center">
-                Nenhum NPS registrado ainda. Preencha notas no card do cliente.
+              <div className="text-xs text-[#64748B] text-center">
+                Nenhum NPS registrado ainda.
               </div>
             )}
           </div>
@@ -169,9 +170,9 @@ export function ChartsOverview({ metrics }: ChartsOverviewProps) {
       </Card>
 
       {/* Gráfico 4: Indicações Recebidas */}
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-white border-[#E2E8F0] shadow-sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-bold text-slate-800">
+          <CardTitle className="text-sm font-semibold text-[#0F172A]">
             Taxa de Indicações de Clientes
           </CardTitle>
         </CardHeader>
@@ -183,8 +184,8 @@ export function ChartsOverview({ metrics }: ChartsOverviewProps) {
                   data={referralData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={85}
+                  innerRadius={55}
+                  outerRadius={80}
                   paddingAngle={3}
                   dataKey="value"
                 >
@@ -197,10 +198,11 @@ export function ChartsOverview({ metrics }: ChartsOverviewProps) {
                 </Pie>
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#1e293b",
+                    backgroundColor: "#0F172A",
                     borderRadius: "8px",
-                    color: "#fff",
+                    color: "#FFF",
                     fontSize: "12px",
+                    border: "none",
                   }}
                 />
                 <Legend verticalAlign="bottom" height={36} iconType="circle" />
