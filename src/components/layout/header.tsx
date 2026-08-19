@@ -1,0 +1,63 @@
+"use client";
+
+import Link from "next/link";
+import { User, Bell, Upload, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+interface HeaderProps {
+  onOpenImportModal?: () => void;
+  onOpenAddModal?: () => void;
+}
+
+export function Header({ onOpenImportModal, onOpenAddModal }: HeaderProps) {
+  return (
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex items-center gap-4 md:gap-6">
+        <div className="flex flex-col">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Painel do Operador
+          </span>
+          <h2 className="text-sm md:text-base font-bold text-foreground">
+            Campanha Upgrade 100M
+          </h2>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 md:gap-3">
+        {onOpenImportModal && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onOpenImportModal}
+            className="flex items-center gap-1.5 text-xs font-medium border-slate-300 hover:bg-slate-100"
+          >
+            <Upload className="h-3.5 w-3.5 text-blue-600" />
+            <span className="hidden sm:inline">Importar Planilha</span>
+          </Button>
+        )}
+
+        {onOpenAddModal && (
+          <Button
+            size="sm"
+            onClick={onOpenAddModal}
+            className="flex items-center gap-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Novo Cliente</span>
+          </Button>
+        )}
+
+        <div className="h-4 w-px bg-border mx-1" />
+
+        <div className="flex items-center gap-2 rounded-full border bg-card px-2.5 py-1 text-xs">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-bold">
+            OP
+          </div>
+          <span className="hidden sm:inline font-medium text-foreground">
+            Operador Humano
+          </span>
+        </div>
+      </div>
+    </header>
+  );
+}
