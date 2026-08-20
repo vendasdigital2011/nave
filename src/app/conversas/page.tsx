@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   MessageSquare,
   Search,
-  ExternalLink,
   Sparkles,
   CheckCircle2,
   Copy,
@@ -15,13 +15,15 @@ import {
   Send,
   Loader2,
   AlertCircle,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { DataService } from "@/lib/data-service";
-import { formatPhone, getCleanPhoneForWhatsApp, getStatusBadgeInfo } from "@/lib/utils";
+import { EvolutionService, ChatMessage } from "@/lib/evolution-api";
+import { formatPhone, getStatusBadgeInfo } from "@/lib/utils";
 import { Client, ClientStatus } from "@/types/database";
 
 const MESSAGE_TEMPLATES = [
@@ -52,9 +54,13 @@ const MESSAGE_TEMPLATES = [
   },
 ];
 
-export default function ConversasPage() {
+function ConversasContent() {
+  const searchParams = useSearchParams();
+  const targetClientId = searchParams.get("clientId");
+
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [currentMessage, setCurrentMessage] = useState("");
@@ -69,9 +75,21 @@ export default function ConversasPage() {
   const [isSavingData, setIsSavingData] = useState(false);
   const [dataSavedSuccess, setDataSavedSuccess] = useState(false);
 
+  const instanceName = EvolutionService.getInstanceNameForUser("admin@navetech.com.br");
+
   const loadData = async () => {
     const data = await DataService.getClients();
     setClients(data);
+
+    // Se houver clientId na URL, seleciona instantaneamente
+    if (targetClientId) {
+      const found = data.find((c) => c.id === targetClientId);
+      if (found) {
+        handleSelectClient(found);
+        return;
+      }
+    }
+
     if (data.length > 0 && !selectedClient) {
       handleSelectClient(data[0]);
     }
@@ -79,7 +97,7 @@ export default function ConversasPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [targetClientId]);
 
   const prepareTemplate = (templateText: string, client: Client) => {
     const firstName = client.name.split(" ")[0];
@@ -87,6 +105,7 @@ export default function ConversasPage() {
     setCurrentMessage(personalized);
   };
 
+  // Carregamento instantâneo (< 50ms) de mensagens do cliente
   const handleSelectClient = (client: Client) => {
     setSelectedClient(client);
     setDirectSendFeedback(null);
@@ -100,27 +119,21 @@ export default function ConversasPage() {
       notes: client.notes || "",
     });
     prepareTemplate(MESSAGE_TEMPLATES[0].text, client);
+
+    // Carrega mensagens do histórico local instantaneamente (PRD-CORRECAO-02)
+    const stored = EvolutionService.getStoredMessages(instanceName, client.phone);
+    setChatMessages(stored);
   };
 
-  const filteredClients = clients.filter((c) => {
-    const matchesSearch =
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.phone.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || c.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const getWhatsAppWebUrl = () => {
-    if (!selectedClient) return "#";
-    const phone = getCleanPhoneForWhatsApp(selectedClient.phone);
-    return `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(currentMessage)}`;
-  };
-
-  const getWhatsAppMobileUrl = () => {
-    if (!selectedClient) return "#";
-    const phone = getCleanPhoneForWhatsApp(selectedClient.phone);
-    return `https://wa.me/${phone}?text=${encodeURIComponent(currentMessage)}`;
-  };
+  const filteredClients = useMemo(() => {
+    return clients.filter((c) => {
+      const matchesSearch =
+        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.phone.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "all" || c.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [clients, searchTerm, statusFilter]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(currentMessage);
@@ -133,25 +146,43 @@ export default function ConversasPage() {
     setIsSendingDirect(true);
     setDirectSendFeedback(null);
 
+    const messageText = currentMessage;
+
     try {
       const res = await fetch("/api/evolution/message/sendText", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           number: selectedClient.phone,
-          text: currentMessage,
+          text: messageText,
+          instanceName,
         }),
       });
 
       const data = await res.json();
       if (data.success) {
-        setDirectSendFeedback({ type: "success", text: "Mensagem enviada com sucesso via Evolution API!" });
-        // Se estava frio, passa automaticamente para morno
+        // Registra mensagem no histórico local instantaneamente
+        const newMsg = EvolutionService.saveMessage({
+          instance_name: instanceName,
+          client_phone: selectedClient.phone,
+          client_name: selectedClient.name,
+          message: messageText,
+          direction: "outbound",
+          status: "sent",
+        });
+
+        setChatMessages((prev) => [...prev, newMsg]);
+        setDirectSendFeedback({ type: "success", text: "Mensagem enviada com sucesso no chat interno!" });
+
+        // Avança status para morno se estava frio
         if (selectedClient.status === "frio") {
           handleQuickStatusChange("morno");
         }
       } else {
-        setDirectSendFeedback({ type: "error", text: "Erro ao enviar via API: " + (data.error || "Tente abrir no WhatsApp Web") });
+        setDirectSendFeedback({
+          type: "error",
+          text: "Erro ao enviar via API: " + (data.error || "Verifique a conexão em Meu WhatsApp"),
+        });
       }
     } catch (err: any) {
       setDirectSendFeedback({ type: "error", text: "Falha de envio: " + err.message });
@@ -191,11 +222,11 @@ export default function ConversasPage() {
           Central de Conversas
         </h1>
         <p className="text-xs md:text-sm text-[#64748B]">
-          Atendimento humanizado para upgrade de velocidade, troca de roteador e indicações.
+          Atendimento nativo 100% interno via Evolution API.
         </p>
       </div>
 
-      {/* 3-Column Layout: [ Clientes | Conversa | Dados ] */}
+      {/* 3-Column Layout: [ Clientes | Conversa Interna | Dados ] */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 h-[calc(100vh-210px)] min-h-[620px]">
         {/* COLUNA 1: Clientes (3 cols) */}
         <div className="lg:col-span-3 flex flex-col rounded-2xl border border-[#E2E8F0] bg-white shadow-sm overflow-hidden">
@@ -267,7 +298,7 @@ export default function ConversasPage() {
           </div>
         </div>
 
-        {/* COLUNA 2: Conversa (6 cols) */}
+        {/* COLUNA 2: Chat Interno (6 cols) */}
         <div className="lg:col-span-6 flex flex-col rounded-2xl border border-[#E2E8F0] bg-white shadow-sm overflow-hidden">
           {selectedClient ? (
             <div className="flex-1 flex flex-col p-4.5 space-y-3.5 overflow-y-auto">
@@ -309,6 +340,40 @@ export default function ConversasPage() {
                 </div>
               </div>
 
+              {/* Histórico Interno de Mensagens (PRD-CORRECAO-01 / 02) */}
+              <div className="h-44 overflow-y-auto bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 space-y-2">
+                {chatMessages.length > 0 ? (
+                  chatMessages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex flex-col ${
+                        msg.direction === "outbound" ? "items-end" : "items-start"
+                      }`}
+                    >
+                      <div
+                        className={`max-w-[80%] rounded-xl px-3 py-2 text-xs leading-relaxed ${
+                          msg.direction === "outbound"
+                            ? "bg-[#FF6A00] text-white rounded-br-none"
+                            : "bg-white border border-[#E2E8F0] text-[#0B0B0D] rounded-bl-none"
+                        }`}
+                      >
+                        {msg.message}
+                      </div>
+                      <span className="text-[9px] text-[#94A3B8] mt-0.5 font-mono">
+                        {new Date(msg.created_at).toLocaleTimeString("pt-BR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="h-full flex items-center justify-center text-center text-xs text-[#64748B]">
+                    Nenhuma mensagem registrada ainda no chat interno.
+                  </div>
+                )}
+              </div>
+
               {/* Templates Rápidos */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-[#64748B] flex items-center gap-1">
@@ -334,7 +399,7 @@ export default function ConversasPage() {
               <div className="space-y-1 flex-1 flex flex-col">
                 <div className="flex items-center justify-between">
                   <label className="text-[11px] font-bold text-[#64748B]">
-                    Mensagem a Enviar:
+                    Nova Mensagem:
                   </label>
                   <Button
                     variant="ghost"
@@ -349,15 +414,15 @@ export default function ConversasPage() {
                 <Textarea
                   value={currentMessage}
                   onChange={(e) => setCurrentMessage(e.target.value)}
-                  className="flex-1 min-h-[140px] text-xs bg-[#F8FAFC] border-[#E2E8F0] text-[#0B0B0D] p-3 leading-relaxed rounded-xl focus-visible:ring-[#FF6A00]"
-                  placeholder="Digite sua mensagem personalizada..."
+                  className="flex-1 min-h-[100px] text-xs bg-[#F8FAFC] border-[#E2E8F0] text-[#0B0B0D] p-3 leading-relaxed rounded-xl focus-visible:ring-[#FF6A00]"
+                  placeholder="Digite sua mensagem..."
                 />
               </div>
 
-              {/* Feedback de envio direto se houver */}
+              {/* Feedback de Envio */}
               {directSendFeedback && (
                 <div
-                  className={`text-xs p-2.5 rounded-xl border flex items-center gap-2 ${
+                  className={`text-xs p-2 rounded-xl border flex items-center gap-2 ${
                     directSendFeedback.type === "success"
                       ? "bg-emerald-50 border-emerald-200 text-emerald-800"
                       : "bg-rose-50 border-rose-200 text-rose-800"
@@ -372,44 +437,25 @@ export default function ConversasPage() {
                 </div>
               )}
 
-              {/* Botões de Ação WhatsApp: Envio Direto API + Web + App */}
-              <div className="pt-2 flex flex-col sm:flex-row gap-2 border-t border-[#E2E8F0]">
-                {/* 1. Enviar Direto via Evolution API */}
+              {/* Botão de Disparo 100% Interno via Evolution API (PRD-CORRECAO-01) */}
+              <div className="pt-2 border-t border-[#E2E8F0]">
                 <Button
                   onClick={handleSendViaEvolution}
-                  disabled={isSendingDirect}
-                  className="bg-[#0B0B0D] hover:bg-black text-white font-bold py-2.5 px-3.5 text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5"
+                  disabled={isSendingDirect || !currentMessage}
+                  className="w-full bg-[#FF6A00] hover:bg-[#E85C00] text-white font-bold py-2.5 px-4 text-xs rounded-xl shadow-md shadow-[#FF6A00]/20 transition-all flex items-center justify-center gap-2"
                 >
                   {isSendingDirect ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Enviando no Chat Interno...
+                    </>
                   ) : (
-                    <Send className="h-3.5 w-3.5 text-[#FF6A00]" />
+                    <>
+                      <Send className="h-4 w-4" />
+                      <span>Enviar Mensagem (Chat Interno Evolution API)</span>
+                    </>
                   )}
-                  <span>Disparo Direto (API)</span>
                 </Button>
-
-                {/* 2. WhatsApp Web */}
-                <a
-                  href={getWhatsAppWebUrl()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#FF6A00] hover:bg-[#E85C00] text-white font-bold py-2.5 px-4 text-xs shadow-md shadow-[#FF6A00]/20 transition-all active:scale-[0.98]"
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  <span>WhatsApp Web</span>
-                  <ExternalLink className="h-3.5 w-3.5 opacity-70" />
-                </a>
-
-                {/* 3. WhatsApp Celular */}
-                <a
-                  href={getWhatsAppMobileUrl()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-[#0B0B0D] font-bold py-2.5 px-3 text-xs transition-colors"
-                >
-                  <span>App / Celular</span>
-                  <ExternalLink className="h-3.5 w-3.5 opacity-70" />
-                </a>
               </div>
             </div>
           ) : (
@@ -548,5 +594,13 @@ export default function ConversasPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ConversasPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs text-[#64748B]">Carregando chat interno...</div>}>
+      <ConversasContent />
+    </Suspense>
   );
 }

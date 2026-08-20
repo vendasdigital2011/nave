@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   Dialog,
   DialogContent,
@@ -13,17 +14,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
-  Phone,
   MessageSquare,
   Star,
   Zap,
   UserCheck,
   Trash2,
   Save,
-  CheckCircle2,
 } from "lucide-react";
 import { DataService } from "@/lib/data-service";
-import { formatPhone, getCleanPhoneForWhatsApp, getStatusBadgeInfo } from "@/lib/utils";
+import { formatPhone, getStatusBadgeInfo } from "@/lib/utils";
 import { Client, ClientStatus } from "@/types/database";
 
 interface ClientDetailsModalProps {
@@ -75,11 +74,6 @@ export function ClientDetailsModal({
 
   if (!client) return null;
 
-  const cleanPhone = getCleanPhoneForWhatsApp(client.phone);
-  const whatsappUrl = `https://wa.me/${cleanPhone}?text=Ol%C3%A1%20${encodeURIComponent(
-    client.name
-  )}%2C%20tudo%20bem%3F%20Aqui%20%C3%A9%20da%20Navetech%20Telecom.%20Gostaria%20de%20apresentar%20uma%20oportunidade%20especial%20de%20upgrade%20para%20100%20Mega!`;
-
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -126,23 +120,22 @@ export function ClientDetailsModal({
         </DialogHeader>
 
         <div className="space-y-4 py-3 text-xs">
-          {/* Ação Direta WhatsApp */}
+          {/* Chat Interno Direct Action (PRD-CORRECAO-01) */}
           <div className="flex items-center justify-between rounded-xl border border-[#FFD0A8] bg-[#FFF7F1] p-3">
             <div className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-[#FF6A00]" />
               <div>
-                <span className="font-bold text-[#0B0B0D]">Contato Rápido WhatsApp</span>
-                <p className="text-[11px] text-[#64748B]">Abra a conversa diretamente com o cliente.</p>
+                <span className="font-bold text-[#0B0B0D]">Chat Interno Evolution API</span>
+                <p className="text-[11px] text-[#64748B]">Abra a conversa diretamente na plataforma.</p>
               </div>
             </div>
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href={`/conversas?clientId=${client.id}`}
+              onClick={() => onOpenChange(false)}
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#FF6A00] hover:bg-[#E85C00] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-all"
             >
-              <span>Abrir WhatsApp</span>
-            </a>
+              <span>Abrir Conversa</span>
+            </Link>
           </div>
 
           {/* Status e Planos */}

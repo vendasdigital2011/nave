@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -11,7 +12,7 @@ import {
   GripVertical,
 } from "lucide-react";
 import { Client } from "@/types/database";
-import { formatPhone, getCleanPhoneForWhatsApp } from "@/lib/utils";
+import { formatPhone } from "@/lib/utils";
 
 interface ClientCardProps {
   client: Client;
@@ -39,11 +40,6 @@ export function ClientCard({ client, onSelectClient, isOverlay = false }: Client
     transition,
     opacity: isDragging ? 0.3 : 1,
   };
-
-  const cleanPhone = getCleanPhoneForWhatsApp(client.phone);
-  const whatsappUrl = `https://wa.me/${cleanPhone}?text=Ol%C3%A1%20${encodeURIComponent(
-    client.name
-  )}%2C%20tudo%20bem%3F%20Aqui%20%C3%A9%20da%20Navetech%20Telecom.%20Gostaria%20de%20apresentar%20uma%20oportunidade%20especial%20de%20upgrade%20para%20o%20plano%20de%20100%20Mega!`;
 
   return (
     <div
@@ -111,7 +107,7 @@ export function ClientCard({ client, onSelectClient, isOverlay = false }: Client
         )}
       </div>
 
-      {/* Card Footer: WhatsApp Action */}
+      {/* Card Footer: Internal Chat Navigation (PRD-CORRECAO-01) */}
       <div className="mt-3 pt-2 border-t border-[#F1F5F9] flex items-center justify-between">
         <span className="text-[10px] text-[#94A3B8]">
           {new Date(client.created_at).toLocaleDateString("pt-BR", {
@@ -120,16 +116,14 @@ export function ClientCard({ client, onSelectClient, isOverlay = false }: Client
           })}
         </span>
 
-        <a
-          href={whatsappUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          href={`/conversas?clientId=${client.id}`}
           onClick={(e) => e.stopPropagation()}
-          className="inline-flex items-center gap-1 rounded-lg bg-[#FFF4EC] px-2 py-0.5 text-[11px] font-bold text-[#FF6A00] border border-[#FFD0A8] hover:bg-[#FF6A00] hover:text-white transition-colors"
+          className="inline-flex items-center gap-1 rounded-lg bg-[#FFF4EC] px-2.5 py-1 text-[11px] font-bold text-[#FF6A00] border border-[#FFD0A8] hover:bg-[#FF6A00] hover:text-white transition-colors"
         >
           <MessageSquare className="h-3 w-3" />
-          <span>WhatsApp</span>
-        </a>
+          <span>Conversa</span>
+        </Link>
       </div>
     </div>
   );

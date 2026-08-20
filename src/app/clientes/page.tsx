@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import * as XLSX from "xlsx";
 import {
-  Users,
   Search,
   Filter,
   Download,
@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataService } from "@/lib/data-service";
-import { formatPhone, getCleanPhoneForWhatsApp, getStatusBadgeInfo } from "@/lib/utils";
+import { formatPhone, getStatusBadgeInfo } from "@/lib/utils";
 import { Client } from "@/types/database";
 import { ClientDetailsModal } from "@/components/kanban/client-details-modal";
 
@@ -140,8 +140,6 @@ export default function ClientesPage() {
               {filteredClients.length > 0 ? (
                 filteredClients.map((client) => {
                   const statusInfo = getStatusBadgeInfo(client.status);
-                  const cleanPhone = getCleanPhoneForWhatsApp(client.phone);
-                  const waUrl = `https://web.whatsapp.com/send?phone=${cleanPhone}`;
 
                   return (
                     <tr
@@ -204,15 +202,14 @@ export default function ClientesPage() {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex items-center justify-end gap-1.5">
-                          <a
-                            href={waUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          {/* Internal Chat Link (PRD-CORRECAO-01) */}
+                          <Link
+                            href={`/conversas?clientId=${client.id}`}
                             className="inline-flex items-center gap-1 rounded-lg bg-[#FFF4EC] px-2.5 py-1 text-[#FF6A00] border border-[#FFD0A8] hover:bg-[#FF6A00] hover:text-white font-bold transition-colors"
                           >
                             <MessageSquare className="h-3 w-3" />
-                            <span>WhatsApp</span>
-                          </a>
+                            <span>Conversa</span>
+                          </Link>
                           <Button
                             variant="ghost"
                             size="icon"
