@@ -34,11 +34,12 @@ interface ClientDetailsModalProps {
 }
 
 const STATUS_OPTIONS: { value: ClientStatus; label: string }[] = [
-  { value: "frio", label: "Frio (A Iniciar)" },
-  { value: "morno", label: "Morno (Em Contato)" },
-  { value: "quente", label: "Quente (Interessado)" },
-  { value: "vendido", label: "Vendido (Upgrade Feito)" },
-  { value: "desativado", label: "Desativado / Cancelado" },
+  { value: "importados", label: "📥 Importados" },
+  { value: "frio", label: "📩 Contato Iniciado" },
+  { value: "morno", label: "💬 Em Conversa" },
+  { value: "quente", label: "🔥 Interessado" },
+  { value: "vendido", label: "🏆 Fechado" },
+  { value: "desativado", label: "🚫 Não Interessado" },
 ];
 
 export function ClientDetailsModal({
@@ -120,7 +121,7 @@ export function ClientDetailsModal({
         </DialogHeader>
 
         <div className="space-y-4 py-3 text-xs">
-          {/* Chat Interno Direct Action (PRD-CORRECAO-01) */}
+          {/* Chat Interno Direct Action */}
           <div className="flex items-center justify-between rounded-xl border border-[#FFD0A8] bg-[#FFF7F1] p-3">
             <div className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-[#FF6A00]" />
@@ -141,7 +142,7 @@ export function ClientDetailsModal({
           {/* Status e Planos */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="font-bold text-[#0B0B0D]">Status no Funil</label>
+              <label className="font-bold text-[#0B0B0D]">Status no Funil Comercial</label>
               <select
                 value={formData.status}
                 onChange={(e) =>

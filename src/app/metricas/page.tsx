@@ -28,12 +28,12 @@ import {
 import { DataService } from "@/lib/data-service";
 import { DashboardMetrics } from "@/types/database";
 
-const NPS_COLORS = ["#10b981", "#f59e0b", "#ef4444"];
-const FUNNEL_COLORS = ["#3b82f6", "#f59e0b", "#f97316", "#10b981"];
+const NPS_COLORS = ["#22c55e", "#f59e0b", "#ef4444"];
 
 export default function MetricasPage() {
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     totalClients: 0,
+    importadosCount: 0,
     frioCount: 0,
     mornoCount: 0,
     quenteCount: 0,
@@ -56,186 +56,202 @@ export default function MetricasPage() {
   }, []);
 
   const funnelData = [
-    { etapa: "1. Frio (Base)", total: metrics.frioCount, fill: "#3b82f6" },
-    { etapa: "2. Morno (Contato)", total: metrics.mornoCount, fill: "#f59e0b" },
-    { etapa: "3. Quente (Interesse)", total: metrics.quenteCount, fill: "#f97316" },
-    { etapa: "4. Vendido (Ativado)", total: metrics.vendidoCount, fill: "#10b981" },
+    { etapa: "1. Importados", total: metrics.importadosCount, fill: "#64748b" },
+    { etapa: "2. Contato Iniciado", total: metrics.frioCount, fill: "#2563eb" },
+    { etapa: "3. Em Conversa", total: metrics.mornoCount, fill: "#f59e0b" },
+    { etapa: "4. Interessados", total: metrics.quenteCount, fill: "#ff6a00" },
+    { etapa: "5. Fechados", total: metrics.vendidoCount, fill: "#22c55e" },
+    { etapa: "6. Não Interessados", total: metrics.desativadoCount, fill: "#ef4444" },
   ];
 
-  const npsData = [
+  const npsPieData = [
     { name: "Promotores (9-10)", value: metrics.npsPromoters },
     { name: "Neutros (7-8)", value: metrics.npsPassives },
     { name: "Detratores (0-6)", value: metrics.npsDetractors },
-  ].filter((d) => d.value > 0);
-
-  const responseRateData = [
-    { name: "Abordados / Respondidos", value: metrics.totalApproached, fill: "#10b981" },
-    { name: "Ainda Não Abordados", value: metrics.frioCount, fill: "#cbd5e1" },
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6 max-w-6xl mx-auto">
       <div>
-        <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <BarChart3 className="h-6 w-6 text-blue-600" />
-          Métricas & Indicadores de Desempenho
+        <h1 className="text-xl md:text-2xl font-bold text-[#0B0B0D] tracking-tight">
+          Métricas & Desempenho Comercial
         </h1>
-        <p className="text-xs md:text-sm text-slate-500">
-          Relatórios quantitativos da campanha de upgrade de planos 50 Mega para 100 Mega.
+        <p className="text-xs md:text-sm text-[#64748B]">
+          Acompanhe os resultados do funil comercial, satisfação (NPS) e taxa de conversão em tempo real.
         </p>
       </div>
 
-      {/* KPI Highlights */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
-          <span className="text-xs font-semibold text-slate-400">Taxa de Abordagem</span>
-          <div className="text-2xl font-black text-blue-600 mt-1">{metrics.responseRate}%</div>
-          <span className="text-[11px] text-slate-500">{metrics.totalApproached} de {metrics.totalClients} contatos</span>
-        </div>
+      {/* Grid de KPIs Superiores */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <Card className="bg-white border-[#E2E8F0] shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider block">
+                Total de Clientes
+              </span>
+              <span className="text-2xl font-black text-[#0B0B0D] tracking-tight">
+                {metrics.totalClients}
+              </span>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center text-[#FF6A00]">
+              <BarChart3 className="h-5 w-5" />
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
-          <span className="text-xs font-semibold text-slate-400">Taxa de Fechamento</span>
-          <div className="text-2xl font-black text-emerald-600 mt-1">{metrics.conversionRate}%</div>
-          <span className="text-[11px] text-slate-500">{metrics.vendidoCount} upgrades realizados</span>
-        </div>
+        <Card className="bg-white border-[#E2E8F0] shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider block">
+                Taxa de Conversão
+              </span>
+              <span className="text-2xl font-black text-[#16A34A] tracking-tight">
+                {metrics.conversionRate}%
+              </span>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
-          <span className="text-xs font-semibold text-slate-400">Média NPS</span>
-          <div className="text-2xl font-black text-amber-500 mt-1">
-            {metrics.avgNps > 0 ? `${metrics.avgNps} / 10` : "-"}
-          </div>
-          <span className="text-[11px] text-slate-500">{metrics.npsPromoters} promotores</span>
-        </div>
+        <Card className="bg-white border-[#E2E8F0] shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider block">
+                Média NPS
+              </span>
+              <span className="text-2xl font-black text-[#0B0B0D] tracking-tight">
+                {metrics.avgNps > 0 ? metrics.avgNps : "N/A"}
+              </span>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
+              <Star className="h-5 w-5 fill-current" />
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
-          <span className="text-xs font-semibold text-slate-400">Total de Indicações</span>
-          <div className="text-2xl font-black text-purple-600 mt-1">{metrics.referralsCount}</div>
-          <span className="text-[11px] text-slate-500">Novos leads gerados</span>
-        </div>
+        <Card className="bg-white border-[#E2E8F0] shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider block">
+                Indicações Recebidas
+              </span>
+              <span className="text-2xl font-black text-[#7E22CE] tracking-tight">
+                {metrics.referralsCount}
+              </span>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600">
+              <UserCheck className="h-5 w-5" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Detailed Graphs Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 1. Funil Comercial */}
-        <Card className="bg-white border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-sm font-bold text-slate-800">
-              1. Funil Comercial de Vendas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={funnelData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="etapa" fontSize={11} stroke="#64748b" />
-                  <YAxis fontSize={12} stroke="#64748b" />
-                  <Tooltip />
-                  <Bar dataKey="total" radius={[6, 6, 0, 0]}>
-                    {funnelData.map((e, idx) => (
-                      <Cell key={idx} fill={e.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Gráfico do Funil Comercial de 6 Etapas */}
+      <Card className="bg-white border-[#E2E8F0] shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-bold text-[#0B0B0D] flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-[#FF6A00]" />
+            Distribuição dos Clientes por Etapa Comercial
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-72 w-full pt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={funnelData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="etapa" tick={{ fontSize: 11, fill: "#64748B" }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#64748B" }} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "#ffffff", borderRadius: "12px", border: "1px solid #E2E8F0", fontSize: "12px" }}
+                />
+                <Bar dataKey="total" radius={[8, 8, 0, 0]}>
+                  {funnelData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* 2. Distribuição NPS */}
-        <Card className="bg-white border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-sm font-bold text-slate-800">
-              2. Classificação de Satisfação (NPS)
+      {/* Gráfico NPS e Taxa de Resposta */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="bg-white border-[#E2E8F0] shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-bold text-[#0B0B0D] flex items-center gap-2">
+              <PieIcon className="h-4 w-4 text-[#FF6A00]" />
+              Classificação NPS (Satisfação do Cliente)
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-64 w-full flex items-center justify-center">
-              {npsData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={npsData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={85}
-                      paddingAngle={3}
-                      dataKey="value"
-                    >
-                      {npsData.map((_, index) => (
-                        <Cell key={index} fill={NPS_COLORS[index % NPS_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="text-xs text-slate-400 text-center">
-                  Sem dados suficientes de NPS preenchidos.
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 3. Taxa de Resposta / Abordagem */}
-        <Card className="bg-white border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-sm font-bold text-slate-800">
-              3. Taxa de Abordagem da Base
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 w-full flex items-center justify-center">
+          <CardContent className="flex flex-col items-center">
+            <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={responseRateData}
+                    data={npsPieData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={85}
-                    paddingAngle={3}
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={4}
                     dataKey="value"
                   >
-                    {responseRateData.map((e, index) => (
-                      <Cell key={index} fill={e.fill} />
+                    {npsPieData.map((entry, index) => (
+                      <Cell key={`nps-cell-${index}`} fill={NPS_COLORS[index % NPS_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#ffffff", borderRadius: "12px", border: "1px solid #E2E8F0", fontSize: "12px" }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-        {/* 4. Resumo Executivo */}
-        <Card className="bg-white border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-sm font-bold text-slate-800">
-              4. Diagnóstico da Operação
+        <Card className="bg-white border-[#E2E8F0] shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-bold text-[#0B0B0D] flex items-center gap-2">
+              <Award className="h-4 w-4 text-[#FF6A00]" />
+              Resumo Operacional Navetech
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-xs text-slate-700">
-            <div className="rounded-lg bg-slate-50 p-3 border">
-              <div className="font-bold text-slate-900 mb-1">Status da Validação do MVP:</div>
-              <p className="text-slate-600 leading-relaxed">
-                A esteira comercial está configurada para abordagem manual direta dos clientes 50 Mega via WhatsApp, garantindo atendimento humanizado e validação de interesse sem ruídos de robôs ou custos desnecessários.
+          <CardContent className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-[#64748B] font-semibold">Taxa de Abordagem</span>
+                <span className="font-bold text-[#0B0B0D]">{metrics.responseRate}%</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-[#F8FAFC] border border-[#E2E8F0] overflow-hidden">
+                <div
+                  className="h-full bg-[#FF6A00] rounded-full transition-all duration-500"
+                  style={{ width: `${metrics.responseRate}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-2 border-t border-[#E2E8F0]">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-[#64748B] font-semibold">Conversão de Fechados</span>
+                <span className="font-bold text-[#16A34A]">{metrics.conversionRate}%</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-[#F8FAFC] border border-[#E2E8F0] overflow-hidden">
+                <div
+                  className="h-full bg-[#16A34A] rounded-full transition-all duration-500"
+                  style={{ width: `${metrics.conversionRate}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl border border-[#FFD0A8] bg-[#FFF7F1] text-xs text-[#0B0B0D] space-y-1">
+              <span className="font-bold block">Programa Indique e Ganhe</span>
+              <p className="text-[11px] text-[#64748B] leading-relaxed">
+                {metrics.referralsCount} clientes aceitaram indicar novos contatos após realizarem o upgrade de 50M para 100M.
               </p>
-            </div>
-
-            <div className="flex items-center justify-between p-2 rounded border bg-emerald-50 text-emerald-800">
-              <span className="font-semibold">Upgrades Ativados:</span>
-              <strong className="text-base">{metrics.vendidoCount} clientes</strong>
-            </div>
-
-            <div className="flex items-center justify-between p-2 rounded border bg-blue-50 text-blue-800">
-              <span className="font-semibold">Oportunidades em Aberto:</span>
-              <strong className="text-base">{metrics.mornoCount + metrics.quenteCount} clientes</strong>
             </div>
           </CardContent>
         </Card>

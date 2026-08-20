@@ -26,28 +26,40 @@ const COLUMNS: {
   accentColor: string;
 }[] = [
   {
+    id: "importados",
+    title: "Importados",
+    emoji: "📥",
+    accentColor: "#64748B",
+  },
+  {
     id: "frio",
-    title: "Frio (A Iniciar)",
-    emoji: "❄️",
-    accentColor: "#94A3B8",
+    title: "Contato Iniciado",
+    emoji: "📩",
+    accentColor: "#2563EB",
   },
   {
     id: "morno",
-    title: "Morno (Em Contato)",
-    emoji: "🌤️",
+    title: "Em Conversa",
+    emoji: "💬",
     accentColor: "#F59E0B",
   },
   {
     id: "quente",
-    title: "Quente (Interessado)",
+    title: "Interessado",
     emoji: "🔥",
     accentColor: "#FF6A00",
   },
   {
     id: "vendido",
-    title: "Vendido (Upgrade Feito)",
+    title: "Fechado",
     emoji: "🏆",
     accentColor: "#22C55E",
+  },
+  {
+    id: "desativado",
+    title: "Não Interessado",
+    emoji: "🚫",
+    accentColor: "#EF4444",
   },
 ];
 
@@ -149,14 +161,14 @@ export function KanbanBoard() {
         </div>
       </div>
 
-      {/* DnD Board */}
+      {/* DnD Board - 6 Colunas Comerciais */}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4 items-start">
+        <div className="flex gap-3.5 overflow-x-auto pb-4 items-start">
           {COLUMNS.map((column) => {
             const columnClients = filteredClients.filter((c) => c.status === column.id);
             return (

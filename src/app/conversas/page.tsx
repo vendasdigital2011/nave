@@ -15,7 +15,6 @@ import {
   Send,
   Loader2,
   AlertCircle,
-  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -75,13 +74,12 @@ function ConversasContent() {
   const [isSavingData, setIsSavingData] = useState(false);
   const [dataSavedSuccess, setDataSavedSuccess] = useState(false);
 
-  const instanceName = EvolutionService.getInstanceNameForUser("admin@navetech.com.br");
+  const instanceName = "naveprospect";
 
   const loadData = async () => {
     const data = await DataService.getClients();
     setClients(data);
 
-    // Se houver clientId na URL, seleciona instantaneamente
     if (targetClientId) {
       const found = data.find((c) => c.id === targetClientId);
       if (found) {
@@ -105,7 +103,6 @@ function ConversasContent() {
     setCurrentMessage(personalized);
   };
 
-  // Carregamento instantâneo (< 50ms) de mensagens do cliente
   const handleSelectClient = (client: Client) => {
     setSelectedClient(client);
     setDirectSendFeedback(null);
@@ -120,7 +117,6 @@ function ConversasContent() {
     });
     prepareTemplate(MESSAGE_TEMPLATES[0].text, client);
 
-    // Carrega mensagens do histórico local instantaneamente (PRD-CORRECAO-02)
     const stored = EvolutionService.getStoredMessages(instanceName, client.phone);
     setChatMessages(stored);
   };
@@ -161,7 +157,6 @@ function ConversasContent() {
 
       const data = await res.json();
       if (data.success) {
-        // Registra mensagem no histórico local instantaneamente
         const newMsg = EvolutionService.saveMessage({
           instance_name: instanceName,
           client_phone: selectedClient.phone,
@@ -174,8 +169,8 @@ function ConversasContent() {
         setChatMessages((prev) => [...prev, newMsg]);
         setDirectSendFeedback({ type: "success", text: "Mensagem enviada com sucesso no chat interno!" });
 
-        // Avança status para morno se estava frio
-        if (selectedClient.status === "frio") {
+        // Se o cliente estava em 'importados' ou 'frio', avança para 'morno' (Em Conversa)
+        if (selectedClient.status === "importados" || selectedClient.status === "frio") {
           handleQuickStatusChange("morno");
         }
       } else {
@@ -226,9 +221,9 @@ function ConversasContent() {
         </p>
       </div>
 
-      {/* 3-Column Layout: [ Clientes | Conversa Interna | Dados ] */}
+      {/* 3-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 h-[calc(100vh-210px)] min-h-[620px]">
-        {/* COLUNA 1: Clientes (3 cols) */}
+        {/* COLUNA 1: Clientes */}
         <div className="lg:col-span-3 flex flex-col rounded-2xl border border-[#E2E8F0] bg-white shadow-sm overflow-hidden">
           <div className="p-3.5 border-b border-[#E2E8F0] space-y-2 bg-[#F8FAFC]">
             <div className="flex items-center justify-between">
@@ -252,11 +247,13 @@ function ConversasContent() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full text-xs rounded-xl border border-[#E2E8F0] bg-white text-[#0B0B0D] px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#FF6A00]"
             >
-              <option value="all">Todos os status</option>
-              <option value="frio">❄️ Frio</option>
-              <option value="morno">🌤️ Morno</option>
-              <option value="quente">🔥 Quente</option>
-              <option value="vendido">🏆 Vendido</option>
+              <option value="all">Todas as Etapas ({clients.length})</option>
+              <option value="importados">📥 Importados</option>
+              <option value="frio">📩 Contato Iniciado</option>
+              <option value="morno">💬 Em Conversa</option>
+              <option value="quente">🔥 Interessado</option>
+              <option value="vendido">🏆 Fechado</option>
+              <option value="desativado">🚫 Não Interessado</option>
             </select>
           </div>
 
@@ -275,15 +272,11 @@ function ConversasContent() {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#0B0B0D] truncate max-w-[150px]">
+                    <span className="text-xs font-bold text-[#0B0B0D] truncate max-w-[140px]">
                       {client.name}
                     </span>
                     <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                        client.status === "quente"
-                          ? "bg-[#FFF4EC] text-[#FF6A00] border border-[#FFD0A8]"
-                          : statusInfo.color
-                      }`}
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${statusInfo.color}`}
                     >
                       {statusInfo.label}
                     </span>
@@ -298,7 +291,7 @@ function ConversasContent() {
           </div>
         </div>
 
-        {/* COLUNA 2: Chat Interno (6 cols) */}
+        {/* COLUNA 2: Chat Interno */}
         <div className="lg:col-span-6 flex flex-col rounded-2xl border border-[#E2E8F0] bg-white shadow-sm overflow-hidden">
           {selectedClient ? (
             <div className="flex-1 flex flex-col p-4.5 space-y-3.5 overflow-y-auto">
@@ -309,7 +302,7 @@ function ConversasContent() {
                     <h2 className="text-sm font-bold text-[#0B0B0D]">
                       {selectedClient.name}
                     </h2>
-                    <Badge className={selectedClient.status === "quente" ? "bg-[#FFF4EC] text-[#FF6A00] border-[#FFD0A8]" : getStatusBadgeInfo(selectedClient.status).color}>
+                    <Badge className={getStatusBadgeInfo(selectedClient.status).color}>
                       {getStatusBadgeInfo(selectedClient.status).label}
                     </Badge>
                   </div>
@@ -318,29 +311,30 @@ function ConversasContent() {
                   </div>
                 </div>
 
-                {/* Etapas rápidas */}
-                <div className="flex items-center gap-1">
-                  {(["frio", "morno", "quente", "vendido"] as ClientStatus[]).map((st) => {
+                {/* Etapas rápidas do Funil */}
+                <div className="flex flex-wrap items-center gap-1">
+                  {(["importados", "frio", "morno", "quente", "vendido", "desativado"] as ClientStatus[]).map((st) => {
                     const isCurrent = selectedClient.status === st;
+                    const info = getStatusBadgeInfo(st);
                     return (
                       <button
                         key={st}
                         type="button"
                         onClick={() => handleQuickStatusChange(st)}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                        className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all ${
                           isCurrent
                             ? "bg-[#FF6A00] text-white border-[#FF6A00] shadow-xs"
                             : "bg-white text-[#64748B] hover:bg-[#F8FAFC] border-[#E2E8F0]"
                         }`}
                       >
-                        {st}
+                        {info.label}
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Histórico Interno de Mensagens (PRD-CORRECAO-01 / 02) */}
+              {/* Histórico Interno de Mensagens */}
               <div className="h-44 overflow-y-auto bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 space-y-2">
                 {chatMessages.length > 0 ? (
                   chatMessages.map((msg) => (
@@ -437,7 +431,7 @@ function ConversasContent() {
                 </div>
               )}
 
-              {/* Botão de Disparo 100% Interno via Evolution API (PRD-CORRECAO-01) */}
+              {/* Botão de Disparo 100% Interno */}
               <div className="pt-2 border-t border-[#E2E8F0]">
                 <Button
                   onClick={handleSendViaEvolution}
@@ -467,7 +461,7 @@ function ConversasContent() {
           )}
         </div>
 
-        {/* COLUNA 3: Dados do Cliente (3 cols) */}
+        {/* COLUNA 3: Dados do Cliente */}
         <div className="lg:col-span-3 flex flex-col rounded-2xl border border-[#E2E8F0] bg-white shadow-sm overflow-hidden">
           <div className="p-3.5 border-b border-[#E2E8F0] bg-[#F8FAFC]">
             <span className="text-xs font-bold text-[#0B0B0D]">Dados & Feedback</span>

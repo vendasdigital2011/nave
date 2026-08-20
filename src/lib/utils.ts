@@ -25,16 +25,18 @@ export function getCleanPhoneForWhatsApp(phone: string): string {
 
 export function getStatusBadgeInfo(status: string) {
   switch (status) {
+    case "importados":
+      return { label: "Importados", color: "bg-slate-100 text-slate-800 border-slate-200", icon: "📥" };
     case "frio":
-      return { label: "Frio", color: "bg-blue-100 text-blue-800 border-blue-200", icon: "❄️" };
+      return { label: "Contato Iniciado", color: "bg-blue-100 text-blue-800 border-blue-200", icon: "📩" };
     case "morno":
-      return { label: "Morno", color: "bg-amber-100 text-amber-800 border-amber-200", icon: "🌤️" };
+      return { label: "Em Conversa", color: "bg-amber-100 text-amber-800 border-amber-200", icon: "💬" };
     case "quente":
-      return { label: "Quente", color: "bg-orange-100 text-orange-800 border-orange-200", icon: "🔥" };
+      return { label: "Interessado", color: "bg-orange-100 text-orange-800 border-orange-200", icon: "🔥" };
     case "vendido":
-      return { label: "Vendido", color: "bg-emerald-100 text-emerald-800 border-emerald-200", icon: "🏆" };
+      return { label: "Fechado", color: "bg-emerald-100 text-emerald-800 border-emerald-200", icon: "🏆" };
     case "desativado":
-      return { label: "Desativado", color: "bg-rose-100 text-rose-800 border-rose-200", icon: "⛔" };
+      return { label: "Não Interessado", color: "bg-rose-100 text-rose-800 border-rose-200", icon: "🚫" };
     default:
       return { label: status, color: "bg-gray-100 text-gray-800 border-gray-200", icon: "📋" };
   }

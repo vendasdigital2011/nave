@@ -5,7 +5,6 @@ const LOCAL_STORAGE_KEY = "upgradenavetech_clients_backup_v1";
 const INTERACTIONS_STORAGE_KEY = "upgradenavetech_interactions_backup_v1";
 const AUDIT_LOGS_STORAGE_KEY = "upgradenavetech_audit_logs_backup_v1";
 
-// Amostra inicial de clientes padrão caso o banco esteja vazio
 const DEFAULT_SAMPLE_CLIENTS: Client[] = [
   {
     id: "c1",
@@ -96,7 +95,6 @@ export class DataService {
     }
   }
 
-  // PRD-24: Audit Logs Store
   static getAuditLogs(): AuditLog[] {
     if (typeof window === "undefined") return [];
     try {
@@ -167,7 +165,6 @@ export class DataService {
       }
       this.setLocalClients(local);
 
-      // Log de Auditoria Rastreável (PRD-24)
       this.addAuditLog({
         operator_email: operatorEmail,
         action: `Alterou status de "${oldStatus}" para "${newStatus}"`,
@@ -331,6 +328,7 @@ export class DataService {
 
   static calculateMetrics(clients: Client[]): DashboardMetrics {
     const total = clients.length;
+    const importados = clients.filter((c) => c.status === "importados").length;
     const frios = clients.filter((c) => c.status === "frio").length;
     const mornos = clients.filter((c) => c.status === "morno").length;
     const quentes = clients.filter((c) => c.status === "quente").length;
@@ -353,11 +351,12 @@ export class DataService {
     const npsDetractors = npsList.filter((s) => s <= 6).length;
 
     const referralsCount = clients.filter((c) => c.gave_referral).length;
-    const totalApproached = total - frios;
+    const totalApproached = total - importados;
     const responseRate = total > 0 ? Number(((totalApproached / total) * 100).toFixed(1)) : 0;
 
     return {
       totalClients: total,
+      importadosCount: importados,
       frioCount: frios,
       mornoCount: mornos,
       quenteCount: quentes,

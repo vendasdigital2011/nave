@@ -13,13 +13,14 @@ import { ChartsOverview } from "@/components/dashboard/charts-overview";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DataService } from "@/lib/data-service";
-import { formatPhone } from "@/lib/utils";
+import { formatPhone, getStatusBadgeInfo } from "@/lib/utils";
 import { Client, DashboardMetrics } from "@/types/database";
 
 export default function DashboardPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     totalClients: 0,
+    importadosCount: 0,
     frioCount: 0,
     mornoCount: 0,
     quenteCount: 0,
@@ -65,17 +66,10 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <Link href="/conversas">
-            <Button className="bg-[#FF6A00] hover:bg-[#E85C00] text-white font-bold text-xs h-10 px-4 rounded-xl shadow-sm">
-              <MessageSquare className="mr-1.5 h-4 w-4" />
-              Central de Conversas
-            </Button>
-          </Link>
+        <div className="flex items-center gap-2">
           <Link href="/kanban">
-            <Button variant="outline" className="border-[#E2E8F0] bg-white text-[#0B0B0D] hover:bg-[#F8FAFC] font-semibold text-xs h-10 px-4 rounded-xl">
-              <Kanban className="mr-1.5 h-4 w-4 text-[#FF6A00]" />
-              Abrir Kanban
+            <Button className="bg-[#FF6A00] hover:bg-[#E85C00] text-white font-bold text-xs shadow-md shadow-[#FF6A00]/20 rounded-xl">
+              <Kanban className="mr-1.5 h-4 w-4" /> Ver Quadro Kanban
             </Button>
           </Link>
         </div>
@@ -84,87 +78,76 @@ export default function DashboardPage() {
       {/* KPI Cards */}
       <MetricCards metrics={metrics} />
 
-      {/* Main Charts */}
-      <ChartsOverview metrics={metrics} />
+      {/* Main Content Grid: Charts + Fast Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Funnel & NPS Overview (2 Cols) */}
+        <div className="lg:col-span-2 space-y-6">
+          <ChartsOverview metrics={metrics} />
+        </div>
 
-      {/* Bottom Section: Recent Highlights */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Hot Leads / Recent Conversions */}
-        <Card className="lg:col-span-2 bg-white border-[#E2E8F0] shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-sm font-bold text-[#0B0B0D] flex items-center gap-2">
-              <Zap className="h-4 w-4 text-[#FF6A00]" />
-              Últimos Clientes Quentes & Vendidos
-            </CardTitle>
-            <Link href="/kanban" className="text-xs text-[#FF6A00] hover:underline font-bold flex items-center">
-              Ver no Kanban <ArrowRight className="ml-1 h-3 w-3" />
-            </Link>
-          </CardHeader>
-          <CardContent>
-            {recentHotClients.length > 0 ? (
-              <div className="divide-y divide-[#E2E8F0]">
-                {recentHotClients.map((client) => (
-                  <div key={client.id} className="py-2.5 flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-[#0B0B0D]">{client.name}</div>
-                      <div className="text-xs text-[#64748B]">{formatPhone(client.phone)}</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
-                          client.status === "vendido"
-                            ? "bg-[#DCFCE7] text-[#15803D] border border-[#BBF7D0]"
-                            : "bg-[#FFF4EC] text-[#FF6A00] border border-[#FFD0A8]"
-                        }`}
-                      >
-                        {client.status === "vendido" ? "🏆 Vendido" : "🔥 Quente"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+        {/* Action Column (1 Col) */}
+        <div className="space-y-6">
+          {/* Oportunidades Quentes */}
+          <Card className="bg-white border-[#E2E8F0] shadow-sm">
+            <CardHeader className="pb-3 border-b border-[#E2E8F0]">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-bold text-[#0B0B0D] flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-[#FF6A00]" />
+                  Clientes Interessados
+                </CardTitle>
+                <Link
+                  href="/kanban"
+                  className="text-xs text-[#FF6A00] hover:underline font-semibold flex items-center gap-1"
+                >
+                  Ver todos <ArrowRight className="h-3 w-3" />
+                </Link>
               </div>
-            ) : (
-              <div className="text-xs text-[#64748B] py-6 text-center">
-                Nenhum cliente quente ou vendido ainda.
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardHeader>
 
-        {/* Guia Rápido do Operador Navetech */}
-        <Card className="bg-white border-[#E2E8F0] shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-bold text-[#0B0B0D]">
-              Fluxo do Atendimento
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-xs text-[#64748B]">
-            <div className="flex items-start gap-2.5">
-              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#FFF4EC] text-[#FF6A00] font-bold text-[10px]">
-                1
-              </div>
-              <p>Importe a lista de clientes na aba <strong>Importação</strong>.</p>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#FFF4EC] text-[#FF6A00] font-bold text-[10px]">
-                2
-              </div>
-              <p>Abra <strong>Conversas</strong> ou o <strong>Kanban</strong> para falar com o cliente no WhatsApp.</p>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#FFF4EC] text-[#FF6A00] font-bold text-[10px]">
-                3
-              </div>
-              <p>Avance o status para <strong>Quente</strong> ou <strong>Vendido</strong>.</p>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#FFF4EC] text-[#FF6A00] font-bold text-[10px]">
-                4
-              </div>
-              <p>Lance o <strong>NPS</strong> e registre contatos no programa Indique e Ganhe.</p>
-            </div>
-          </CardContent>
-        </Card>
+            <CardContent className="pt-3 divide-y divide-[#E2E8F0]">
+              {recentHotClients.length > 0 ? (
+                recentHotClients.map((client) => {
+                  const statusInfo = getStatusBadgeInfo(client.status);
+                  return (
+                    <div
+                      key={client.id}
+                      className="py-3 flex items-center justify-between hover:bg-[#F8FAFC] p-2 rounded-xl transition-colors"
+                    >
+                      <div className="space-y-0.5">
+                        <span className="text-xs font-bold text-[#0B0B0D] block">
+                          {client.name}
+                        </span>
+                        <div className="flex items-center gap-2 text-[11px] text-[#64748B]">
+                          <span className="font-mono">{formatPhone(client.phone)}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusInfo.color}`}
+                        >
+                          {statusInfo.label}
+                        </span>
+
+                        <Link
+                          href={`/conversas?clientId=${client.id}`}
+                          className="p-1.5 rounded-lg bg-[#FFF4EC] text-[#FF6A00] hover:bg-[#FF6A00] hover:text-white transition-colors"
+                          title="Abrir no Chat Interno"
+                        >
+                          <MessageSquare className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="py-6 text-center text-xs text-[#64748B]">
+                  Nenhuma oportunidade recente nesta etapa.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

@@ -51,7 +51,7 @@ export default function ClientesPage() {
       Telefone: c.phone,
       "Plano Atual": c.current_plan,
       "Plano Alvo": c.target_plan,
-      Status: c.status,
+      Status: getStatusBadgeInfo(c.status).label,
       NPS: c.nps_score ?? "",
       "Interesse Upgrade": c.wants_upgrade ? "Sim" : "Não",
       "Fez Indicação": c.gave_referral ? "Sim" : "Não",
@@ -76,7 +76,7 @@ export default function ClientesPage() {
             Base de Clientes
           </h1>
           <p className="text-xs md:text-sm text-[#64748B]">
-            Gerencie e filtre todos os clientes individuais da campanha de upgrade de velocidade.
+            Gerencie e filtre todos os clientes da campanha de upgrade comercial.
           </p>
         </div>
 
@@ -111,12 +111,13 @@ export default function ClientesPage() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="text-xs rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1.5 text-[#0B0B0D] focus:outline-none focus:ring-1 focus:ring-[#FF6A00]"
           >
-            <option value="all">Todos os Status ({clients.length})</option>
-            <option value="frio">❄️ Frio</option>
-            <option value="morno">🌤️ Morno</option>
-            <option value="quente">🔥 Quente</option>
-            <option value="vendido">🏆 Vendido</option>
-            <option value="desativado">⛔ Desativado</option>
+            <option value="all">Todas as Etapas ({clients.length})</option>
+            <option value="importados">📥 Importados</option>
+            <option value="frio">📩 Contato Iniciado</option>
+            <option value="morno">💬 Em Conversa</option>
+            <option value="quente">🔥 Interessado</option>
+            <option value="vendido">🏆 Fechado</option>
+            <option value="desativado">🚫 Não Interessado</option>
           </select>
         </div>
       </div>
@@ -166,7 +167,7 @@ export default function ClientesPage() {
                         </span>
                       </td>
                       <td className="p-3.5">
-                        <Badge className={client.status === "quente" ? "bg-[#FFF4EC] text-[#FF6A00] border-[#FFD0A8]" : statusInfo.color}>
+                        <Badge className={statusInfo.color}>
                           {statusInfo.label}
                         </Badge>
                       </td>
@@ -202,7 +203,6 @@ export default function ClientesPage() {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* Internal Chat Link (PRD-CORRECAO-01) */}
                           <Link
                             href={`/conversas?clientId=${client.id}`}
                             className="inline-flex items-center gap-1 rounded-lg bg-[#FFF4EC] px-2.5 py-1 text-[#FF6A00] border border-[#FFD0A8] hover:bg-[#FF6A00] hover:text-white font-bold transition-colors"

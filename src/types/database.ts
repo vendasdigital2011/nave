@@ -1,4 +1,4 @@
-export type ClientStatus = 'frio' | 'morno' | 'quente' | 'vendido' | 'desativado';
+export type ClientStatus = 'importados' | 'frio' | 'morno' | 'quente' | 'vendido' | 'desativado';
 
 export interface Client {
   id: string;
@@ -48,6 +48,7 @@ export interface AuditLog {
 
 export interface DashboardMetrics {
   totalClients: number;
+  importadosCount: number;
   frioCount: number;
   mornoCount: number;
   quenteCount: number;
