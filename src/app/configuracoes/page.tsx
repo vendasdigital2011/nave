@@ -15,10 +15,15 @@ import {
   Send,
   AlertCircle,
   Loader2,
+  FileText,
+  UserCheck,
+  History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { DataService } from "@/lib/data-service";
+import { AuditLog } from "@/types/database";
 
 export default function ConfiguracoesPage() {
   const [adminEmail, setAdminEmail] = useState("admin@navetech.com.br");
@@ -29,6 +34,7 @@ export default function ConfiguracoesPage() {
   const [campaignOrigin, setCampaignOrigin] = useState("50 Mega");
   const [campaignTarget, setCampaignTarget] = useState("100 Mega");
   const [isSaved, setIsSaved] = useState(false);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
   // Evolution API Test State
   const [isTestingEvolution, setIsTestingEvolution] = useState(false);
@@ -41,6 +47,10 @@ export default function ConfiguracoesPage() {
   const [testMessageText, setTestMessageText] = useState("Teste de mensagem via Evolution API - NaveProspect");
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [testSendResult, setTestSendResult] = useState<string | null>(null);
+
+  useEffect(() => {
+    setAuditLogs(DataService.getAuditLogs());
+  }, []);
 
   const checkEvolutionConnection = async () => {
     setIsTestingEvolution(true);
@@ -71,14 +81,12 @@ export default function ConfiguracoesPage() {
   const handleCreateOrConnectInstance = async () => {
     setIsTestingEvolution(true);
     try {
-      // 1. Tenta criar a instância
       await fetch("/api/evolution/instance/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ instanceName }),
       });
 
-      // 2. Solicita QR Code de conexão
       const resConnect = await fetch(`/api/evolution/instance/connect?instanceName=${encodeURIComponent(instanceName)}`);
       const dataConnect = await resConnect.json();
 
@@ -139,10 +147,10 @@ export default function ConfiguracoesPage() {
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
         <h1 className="text-xl md:text-2xl font-bold text-[#0B0B0D] tracking-tight">
-          Configurações
+          Configurações & Auditoria
         </h1>
         <p className="text-xs md:text-sm text-[#64748B]">
-          Gerencie os parâmetros de segurança, integração WhatsApp (Evolution API) e metas da campanha.
+          Gerencie os parâmetros de segurança, integração WhatsApp (Evolution API), metas e rastreabilidade de operadores.
         </p>
       </div>
 
@@ -179,7 +187,6 @@ export default function ConfiguracoesPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3.5">
-            {/* Status Feedback */}
             {evolutionStatus && (
               <div
                 className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
@@ -210,7 +217,6 @@ export default function ConfiguracoesPage() {
               </div>
             )}
 
-            {/* QR Code se solicitado */}
             {qrCodeBase64 && (
               <div className="flex flex-col items-center justify-center p-4 bg-[#F8FAFC] border border-[#FFD0A8] rounded-xl text-center space-y-2">
                 <span className="text-xs font-bold text-[#0B0B0D]">Escaneie com seu WhatsApp:</span>
@@ -256,7 +262,6 @@ export default function ConfiguracoesPage() {
               />
             </div>
 
-            {/* Test Send Box */}
             <div className="border-t border-[#E2E8F0] pt-3 space-y-2">
               <label className="text-xs font-bold text-[#0B0B0D] block">
                 Disparo de Teste (WhatsApp)
@@ -300,7 +305,49 @@ export default function ConfiguracoesPage() {
           </CardContent>
         </Card>
 
-        {/* 2. Parâmetros da Campanha Comercial */}
+        {/* 2. PRD-24: Auditoria e Log de Rastreabilidade dos Operadores */}
+        <Card className="bg-white border-[#E2E8F0] shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-bold text-[#0B0B0D] flex items-center gap-2">
+              <History className="h-4 w-4 text-[#FF6A00]" />
+              Rastreabilidade & Auditoria de Atendimentos (PRD-24)
+            </CardTitle>
+            <CardDescription className="text-xs text-[#64748B]">
+              Histórico de ações executadas pelos operadores no sistema.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {auditLogs.length > 0 ? (
+              <div className="max-h-60 overflow-y-auto divide-y divide-[#E2E8F0] border border-[#E2E8F0] rounded-xl bg-[#F8FAFC]">
+                {auditLogs.map((log) => (
+                  <div key={log.id} className="p-3 text-xs flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <div className="font-bold text-[#0B0B0D] flex items-center gap-1.5">
+                        <span className="text-[#FF6A00]">{log.operator_email}</span>
+                        <span>•</span>
+                        <span>{log.action}</span>
+                      </div>
+                      {log.target_client_name && (
+                        <div className="text-[11px] text-[#64748B]">
+                          Cliente: <strong>{log.target_client_name}</strong>
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-[#94A3B8] font-mono shrink-0 ml-2">
+                      {new Date(log.timestamp).toLocaleString("pt-BR")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-6 text-center text-xs text-[#64748B] border border-dashed border-[#E2E8F0] rounded-xl bg-[#F8FAFC]">
+                Nenhum log de auditoria registrado ainda nesta sessão.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* 3. Parâmetros da Campanha Comercial */}
         <Card className="bg-white border-[#E2E8F0] shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-bold text-[#0B0B0D] flex items-center gap-2">
@@ -334,7 +381,7 @@ export default function ConfiguracoesPage() {
           </CardContent>
         </Card>
 
-        {/* 3. Segurança & Administrador */}
+        {/* 4. Segurança & Administrador */}
         <Card className="bg-white border-[#E2E8F0] shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-bold text-[#0B0B0D] flex items-center gap-2">

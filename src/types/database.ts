@@ -16,6 +16,7 @@ export interface Client {
   referral_name?: string;
   referral_phone?: string;
   sold_at?: string;
+  operator_email?: string;
   created_at: string;
   updated_at: string;
 }
@@ -31,7 +32,18 @@ export interface Interaction {
   status?: 'sent' | 'delivered' | 'read' | 'replied' | 'failed';
   old_status?: string | null;
   new_status?: string;
+  operator_email?: string;
   created_at: string;
+}
+
+export interface AuditLog {
+  id: string;
+  operator_email: string;
+  action: string;
+  target_client_id?: string;
+  target_client_name?: string;
+  details?: string;
+  timestamp: string;
 }
 
 export interface DashboardMetrics {
