@@ -4,19 +4,14 @@ import React, { useState, useEffect } from "react";
 import {
   Settings,
   ShieldCheck,
-  MessageSquare,
   Zap,
   Save,
   CheckCircle2,
   Lock,
   Mail,
   RefreshCw,
-  QrCode,
-  Send,
   AlertCircle,
   Loader2,
-  FileText,
-  UserCheck,
   History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,7 +23,7 @@ import { AuditLog } from "@/types/database";
 export default function ConfiguracoesPage() {
   const [adminEmail, setAdminEmail] = useState("admin@navetech.com.br");
   const [adminPassword, setAdminPassword] = useState("");
-  const [evolutionUrl, setEvolutionUrl] = useState("http://evolutionapi.vps10855.panel.icontainer.net");
+  const [evolutionUrl, setEvolutionUrl] = useState("https://evolutionapi.vps10855.panel.icontainer.net");
   const [instanceName, setInstanceName] = useState("naveprospect");
   const [evolutionApiKey, setEvolutionApiKey] = useState("PMhtTHmZZyRRN4A7mi8m2FYHMEH6FYf8");
   const [campaignOrigin, setCampaignOrigin] = useState("50 Mega");
@@ -36,17 +31,10 @@ export default function ConfiguracoesPage() {
   const [isSaved, setIsSaved] = useState(false);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
-  // Evolution API Test State
+  // Evolution API Connection Test State
   const [isTestingEvolution, setIsTestingEvolution] = useState(false);
   const [evolutionStatus, setEvolutionStatus] = useState<"connected" | "disconnected" | "checking" | null>(null);
   const [evolutionMessage, setEvolutionMessage] = useState<string | null>(null);
-  const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
-
-  // Test Message State
-  const [testNumber, setTestNumber] = useState("");
-  const [testMessageText, setTestMessageText] = useState("Teste de mensagem via Evolution API - NaveProspect");
-  const [isSendingTest, setIsSendingTest] = useState(false);
-  const [testSendResult, setTestSendResult] = useState<string | null>(null);
 
   useEffect(() => {
     setAuditLogs(DataService.getAuditLogs());
@@ -56,7 +44,6 @@ export default function ConfiguracoesPage() {
     setIsTestingEvolution(true);
     setEvolutionStatus("checking");
     setEvolutionMessage(null);
-    setQrCodeBase64(null);
 
     try {
       const res = await fetch("/api/evolution/instances");
@@ -65,7 +52,7 @@ export default function ConfiguracoesPage() {
       if (data.success) {
         setEvolutionStatus("connected");
         const count = Array.isArray(data.instances) ? data.instances.length : 0;
-        setEvolutionMessage(`Conexão OK! ${count} instância(s) encontrada(s) no servidor.`);
+        setEvolutionMessage(`Servidor Evolution API respondendo! ${count} instância(s) encontrada(s).`);
       } else {
         setEvolutionStatus("disconnected");
         setEvolutionMessage(data.error || "Servidor não respondeu adequadamente.");
@@ -75,65 +62,6 @@ export default function ConfiguracoesPage() {
       setEvolutionMessage("Falha ao conectar: " + err.message);
     } finally {
       setIsTestingEvolution(false);
-    }
-  };
-
-  const handleCreateOrConnectInstance = async () => {
-    setIsTestingEvolution(true);
-    try {
-      await fetch("/api/evolution/instance/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ instanceName }),
-      });
-
-      const resConnect = await fetch(`/api/evolution/instance/connect?instanceName=${encodeURIComponent(instanceName)}`);
-      const dataConnect = await resConnect.json();
-
-      if (dataConnect.data?.base64) {
-        setQrCodeBase64(dataConnect.data.base64);
-        setEvolutionMessage("Escaneie o QR Code no seu WhatsApp para conectar.");
-      } else if (dataConnect.data?.code) {
-        setEvolutionMessage(`Código de pareamento: ${dataConnect.data.code}`);
-      } else {
-        setEvolutionMessage("Instância já conectada ou pronta para uso!");
-      }
-      setEvolutionStatus("connected");
-    } catch (err: any) {
-      setEvolutionMessage("Erro ao gerar QR Code: " + err.message);
-    } finally {
-      setIsTestingEvolution(false);
-    }
-  };
-
-  const handleSendTestMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!testNumber) return;
-
-    setIsSendingTest(true);
-    setTestSendResult(null);
-
-    try {
-      const res = await fetch("/api/evolution/message/sendText", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          number: testNumber,
-          text: testMessageText,
-          instanceName,
-        }),
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        setTestSendResult("Mensagem enviada com sucesso!");
-      } else {
-        setTestSendResult("Erro: " + (data.error || "Falha ao enviar mensagem"));
-      }
-    } catch (err: any) {
-      setTestSendResult("Erro de conexão: " + err.message);
-    } finally {
-      setIsSendingTest(false);
     }
   };
 
@@ -150,22 +78,22 @@ export default function ConfiguracoesPage() {
           Configurações & Auditoria
         </h1>
         <p className="text-xs md:text-sm text-[#64748B]">
-          Gerencie os parâmetros de segurança, integração WhatsApp (Evolution API), metas e rastreabilidade de operadores.
+          Gerencie os parâmetros de API, credenciais do sistema e consulte logs de rastreabilidade.
         </p>
       </div>
 
       <form onSubmit={handleSave} className="space-y-5">
-        {/* 1. Integração WhatsApp Evolution API */}
+        {/* 1. Parâmetros da Evolution API (Limpo e Exclusivo) */}
         <Card className="bg-white border-[#E2E8F0] shadow-sm">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-sm font-bold text-[#0B0B0D] flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-[#FF6A00]" />
-                  Integração WhatsApp (Evolution API)
+                  <Settings className="h-4 w-4 text-[#FF6A00]" />
+                  Parâmetros da Evolution API
                 </CardTitle>
                 <CardDescription className="text-xs text-[#64748B] mt-0.5">
-                  Conexão direta com o servidor de mensagens WhatsApp da Navetech.
+                  Chaves de conexão e endpoint oficial do servidor.
                 </CardDescription>
               </div>
 
@@ -189,54 +117,29 @@ export default function ConfiguracoesPage() {
           <CardContent className="space-y-3.5">
             {evolutionStatus && (
               <div
-                className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
+                className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
                   evolutionStatus === "connected"
                     ? "bg-emerald-50 border-emerald-200 text-emerald-800"
                     : "bg-rose-50 border-rose-200 text-rose-800"
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  {evolutionStatus === "connected" ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                  ) : (
-                    <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
-                  )}
-                  <span>{evolutionMessage || "Status verificado."}</span>
-                </div>
-
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={handleCreateOrConnectInstance}
-                  className="text-[11px] h-7 bg-white border-emerald-300 text-emerald-900"
-                >
-                  <QrCode className="h-3 w-3 mr-1" />
-                  Conectar WhatsApp (QR Code)
-                </Button>
-              </div>
-            )}
-
-            {qrCodeBase64 && (
-              <div className="flex flex-col items-center justify-center p-4 bg-[#F8FAFC] border border-[#FFD0A8] rounded-xl text-center space-y-2">
-                <span className="text-xs font-bold text-[#0B0B0D]">Escaneie com seu WhatsApp:</span>
-                <img
-                  src={qrCodeBase64}
-                  alt="QR Code WhatsApp"
-                  className="h-48 w-48 object-contain rounded-lg border border-[#E2E8F0] shadow-sm"
-                />
-                <p className="text-[11px] text-[#64748B]">WhatsApp &gt; Aparelhos Conectados &gt; Conectar Aparelho</p>
+                {evolutionStatus === "connected" ? (
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+                )}
+                <span>{evolutionMessage || "Status verificado."}</span>
               </div>
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-[#0B0B0D]">Evolution API Endpoint</label>
+                <label className="text-xs font-bold text-[#0B0B0D]">Endpoint Evolution API</label>
                 <Input
                   value={evolutionUrl}
                   onChange={(e) => setEvolutionUrl(e.target.value)}
                   className="text-xs h-9 bg-[#F8FAFC] border-[#E2E8F0]"
-                  placeholder="http://evolutionapi.vps10855.panel.icontainer.net"
+                  placeholder="https://evolutionapi.vps10855.panel.icontainer.net"
                 />
               </div>
 
@@ -261,59 +164,18 @@ export default function ConfiguracoesPage() {
                 className="text-xs h-9 bg-[#F8FAFC] border-[#E2E8F0] font-mono"
               />
             </div>
-
-            <div className="border-t border-[#E2E8F0] pt-3 space-y-2">
-              <label className="text-xs font-bold text-[#0B0B0D] block">
-                Disparo de Teste (WhatsApp)
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="DDD + Telefone (ex: 77999998888)"
-                  value={testNumber}
-                  onChange={(e) => setTestNumber(e.target.value)}
-                  className="text-xs h-8 bg-[#F8FAFC] border-[#E2E8F0] flex-1 font-mono"
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleSendTestMessage}
-                  disabled={isSendingTest || !testNumber}
-                  className="bg-[#FF6A00] hover:bg-[#E85C00] text-white text-xs font-bold h-8 px-3"
-                >
-                  {isSendingTest ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <span className="flex items-center gap-1">
-                      <Send className="h-3 w-3" /> Enviar Teste
-                    </span>
-                  )}
-                </Button>
-              </div>
-
-              {testSendResult && (
-                <div
-                  className={`text-[11px] p-2 rounded-lg ${
-                    testSendResult.includes("sucesso")
-                      ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                      : "bg-rose-50 text-rose-800 border border-rose-200"
-                  }`}
-                >
-                  {testSendResult}
-                </div>
-              )}
-            </div>
           </CardContent>
         </Card>
 
-        {/* 2. PRD-24: Auditoria e Log de Rastreabilidade dos Operadores */}
+        {/* 2. Rastreabilidade & Auditoria de Atendimentos (PRD-24) */}
         <Card className="bg-white border-[#E2E8F0] shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-bold text-[#0B0B0D] flex items-center gap-2">
               <History className="h-4 w-4 text-[#FF6A00]" />
-              Rastreabilidade & Auditoria de Atendimentos (PRD-24)
+              Auditoria de Ações & Operadores
             </CardTitle>
             <CardDescription className="text-xs text-[#64748B]">
-              Histórico de ações executadas pelos operadores no sistema.
+              Histórico de alterações e atendimentos registrados pelos operadores.
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -1,11 +1,14 @@
 export interface EvolutionInstance {
-  instanceName: string;
-  owner?: string;
+  id?: string;
+  name?: string;
+  instanceName?: string;
+  ownerJid?: string;
   profileName?: string;
-  profilePictureUrl?: string;
+  profilePicUrl?: string;
   status?: string;
-  serverUrl?: string;
-  apikey?: string;
+  connectionStatus?: string;
+  integration?: string;
+  token?: string;
 }
 
 export interface EvolutionQrCodeResponse {
@@ -30,7 +33,11 @@ const MESSAGES_KEY = "naveprospect_chat_messages_v1";
 
 export class EvolutionService {
   private static getBaseUrl(): string {
-    return process.env.EVOLUTION_API_URL || process.env.NEXT_PUBLIC_EVOLUTION_API_URL || "http://evolutionapi.vps10855.panel.icontainer.net";
+    return (
+      process.env.EVOLUTION_API_URL ||
+      process.env.NEXT_PUBLIC_EVOLUTION_API_URL ||
+      "https://evolutionapi.vps10855.panel.icontainer.net"
+    );
   }
 
   private static getApiKey(): string {
@@ -38,8 +45,8 @@ export class EvolutionService {
   }
 
   static getInstanceNameForUser(userIdentifier: string = "admin@navetech.com.br"): string {
-    const clean = userIdentifier.toLowerCase().replace(/[^a-z0-9]/g, "_");
-    return `nave_${clean}`;
+    // Retorna a instância padrão naveprospect ou por operador
+    return process.env.EVOLUTION_INSTANCE_NAME || "naveprospect";
   }
 
   private static async request<T>(
@@ -98,7 +105,7 @@ export class EvolutionService {
   }
 
   static async createInstance(
-    instanceName: string,
+    instanceName: string = "naveprospect",
     webhookUrl?: string
   ): Promise<{ success: boolean; data?: any; error?: string }> {
     const body: Record<string, any> = {
@@ -124,7 +131,7 @@ export class EvolutionService {
   }
 
   static async connectInstance(
-    instanceName: string
+    instanceName: string = "naveprospect"
   ): Promise<{ success: boolean; data?: EvolutionQrCodeResponse; error?: string }> {
     return this.request<EvolutionQrCodeResponse>(`/instance/connect/${instanceName}`, {
       method: "GET",
@@ -132,8 +139,19 @@ export class EvolutionService {
   }
 
   static async getConnectionState(
-    instanceName: string
-  ): Promise<{ success: boolean; state?: string; error?: string }> {
+    instanceName: string = "naveprospect"
+  ): Promise<{ success: boolean; state?: string; instance?: EvolutionInstance; error?: string }> {
+    const instancesRes = await this.fetchInstances();
+    if (instancesRes.success && Array.isArray(instancesRes.instances)) {
+      const found = instancesRes.instances.find(
+        (i) => i.name === instanceName || i.instanceName === instanceName
+      );
+      if (found) {
+        const state = found.connectionStatus || found.status || (found.ownerJid ? "open" : "close");
+        return { success: true, state, instance: found };
+      }
+    }
+
     const result = await this.request<any>(`/instance/connectionState/${instanceName}`);
     if (!result.success) {
       return { success: false, error: result.error };
@@ -145,7 +163,7 @@ export class EvolutionService {
   static async sendTextMessage(
     number: string,
     text: string,
-    instanceName: string
+    instanceName: string = "naveprospect"
   ): Promise<{ success: boolean; data?: any; error?: string }> {
     const cleanNumber = number.replace(/\D/g, "");
     const formattedNumber = cleanNumber.startsWith("55") ? cleanNumber : `55${cleanNumber}`;
@@ -163,7 +181,7 @@ export class EvolutionService {
     });
   }
 
-  // Local Chat Messages Store for per-instance isolation
+  // Local Chat Messages Store
   static getStoredMessages(instanceName: string, clientPhone?: string): ChatMessage[] {
     if (typeof window === "undefined") return [];
     try {
@@ -172,7 +190,11 @@ export class EvolutionService {
       let filtered = all.filter((m) => m.instance_name === instanceName);
       if (clientPhone) {
         const cleanPhone = clientPhone.replace(/\D/g, "");
-        filtered = filtered.filter((m) => m.client_phone.replace(/\D/g, "").includes(cleanPhone) || cleanPhone.includes(m.client_phone.replace(/\D/g, "")));
+        filtered = filtered.filter(
+          (m) =>
+            m.client_phone.replace(/\D/g, "").includes(cleanPhone) ||
+            cleanPhone.includes(m.client_phone.replace(/\D/g, ""))
+        );
       }
       return filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     } catch {
