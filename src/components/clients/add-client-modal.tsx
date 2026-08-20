@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,7 @@ interface AddClientModalProps {
   onOpenChange: (open: boolean) => void;
   onClientAdded?: () => void;
   onSuccess?: () => void;
+  defaultStatus?: ClientStatus;
 }
 
 export function AddClientModal({
@@ -26,14 +27,21 @@ export function AddClientModal({
   onOpenChange,
   onClientAdded,
   onSuccess,
+  defaultStatus = "importados",
 }: AddClientModalProps) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [currentPlan, setCurrentPlan] = useState("50 Mega");
   const [targetPlan, setTargetPlan] = useState("100 Mega");
-  const [status, setStatus] = useState<ClientStatus>("frio");
+  const [status, setStatus] = useState<ClientStatus>(defaultStatus);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setStatus(defaultStatus);
+    }
+  }, [open, defaultStatus]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,10 +132,12 @@ export function AddClientModal({
               onChange={(e) => setStatus(e.target.value as ClientStatus)}
               className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#FF6A00]"
             >
-              <option value="frio">Frio (A Iniciar)</option>
-              <option value="morno">Morno (Em Contato)</option>
-              <option value="quente">Quente (Interessado)</option>
-              <option value="vendido">Vendido (Upgrade Feito)</option>
+              <option value="importados">📥 Importados</option>
+              <option value="frio">📩 Contato Iniciado</option>
+              <option value="morno">💬 Em Conversa</option>
+              <option value="quente">🔥 Interessado</option>
+              <option value="vendido">🏆 Fechado</option>
+              <option value="desativado">🚫 Não Interessado</option>
             </select>
           </div>
 
