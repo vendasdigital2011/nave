@@ -8,7 +8,6 @@ import {
   AlertCircle,
   Loader2,
   RefreshCw,
-  ShieldCheck,
   ArrowRight,
   Send,
   User,
@@ -17,12 +16,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { EvolutionService, EvolutionInstance } from "@/lib/evolution-api";
+import { EvolutionInstance } from "@/lib/evolution-api";
 import Link from "next/link";
 
 export default function WhatsAppPage() {
   const [currentUser] = useState("admin@navetech.com.br");
-  const instanceName = EvolutionService.getInstanceNameForUser(currentUser);
+  const instanceName = "naveprospect";
 
   const [connectionState, setConnectionState] = useState<"open" | "close" | "connecting" | "unknown">("unknown");
   const [connectedInstance, setConnectedInstance] = useState<EvolutionInstance | null>(null);
@@ -37,23 +36,36 @@ export default function WhatsAppPage() {
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [testSendResult, setTestSendResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // Roteamento seguro via API Route Interna (/api/evolution/instances) para evitar Mixed Content
   const checkStatus = async () => {
     setIsLoading(true);
     setStatusMessage(null);
     try {
-      const res = await EvolutionService.getConnectionState(instanceName);
+      const res = await fetch("/api/evolution/instances");
+      const data = await res.json();
 
-      if (res.success && res.state === "open") {
-        setConnectionState("open");
-        setQrCodeBase64(null);
-        if (res.instance) {
-          setConnectedInstance(res.instance);
+      if (data.success && Array.isArray(data.instances)) {
+        const found = data.instances.find(
+          (i: any) => i.name === instanceName || i.instanceName === instanceName
+        );
+        if (found) {
+          setConnectedInstance(found);
+          const state = found.connectionStatus || found.status || (found.ownerJid ? "open" : "close");
+          if (state === "open") {
+            setConnectionState("open");
+            setQrCodeBase64(null);
+            setStatusMessage("Seu WhatsApp está conectado e pronto para atendimento!");
+          } else {
+            setConnectionState("close");
+            setStatusMessage("WhatsApp desconectado. Clique abaixo para conectar.");
+          }
+        } else {
+          setConnectionState("close");
+          setStatusMessage("Instância não encontrada no servidor.");
         }
-        setStatusMessage("Seu WhatsApp está conectado e pronto para atendimento!");
       } else {
         setConnectionState("close");
-        setConnectedInstance(null);
-        setStatusMessage("WhatsApp desconectado. Clique abaixo para conectar.");
+        setStatusMessage(data.error || "Não foi possível consultar o servidor.");
       }
     } catch (err: any) {
       setConnectionState("close");

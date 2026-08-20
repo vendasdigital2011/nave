@@ -33,11 +33,15 @@ const MESSAGES_KEY = "naveprospect_chat_messages_v1";
 
 export class EvolutionService {
   private static getBaseUrl(): string {
-    return (
+    let url =
       process.env.EVOLUTION_API_URL ||
       process.env.NEXT_PUBLIC_EVOLUTION_API_URL ||
-      "https://evolutionapi.vps10855.panel.icontainer.net"
-    );
+      "https://evolutionapi.vps10855.panel.icontainer.net";
+
+    if (url.startsWith("http://")) {
+      url = url.replace("http://", "https://");
+    }
+    return url;
   }
 
   private static getApiKey(): string {
@@ -45,7 +49,6 @@ export class EvolutionService {
   }
 
   static getInstanceNameForUser(userIdentifier: string = "admin@navetech.com.br"): string {
-    // Retorna a instância padrão naveprospect ou por operador
     return process.env.EVOLUTION_INSTANCE_NAME || "naveprospect";
   }
 
