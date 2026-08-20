@@ -15,6 +15,7 @@ import {
   Send,
   Loader2,
   AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -60,6 +61,7 @@ function ConversasContent() {
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [currentMessage, setCurrentMessage] = useState("");
@@ -97,6 +99,58 @@ function ConversasContent() {
     loadData();
   }, [targetClientId]);
 
+  // Função para buscar o histórico real de mensagens (enviadas e recebidas) da Evolution API
+  const fetchEvolutionHistory = async (clientPhone: string) => {
+    setIsLoadingMessages(true);
+    try {
+      const stored = EvolutionService.getStoredMessages(instanceName, clientPhone);
+      const res = await fetch("/api/evolution/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ number: clientPhone, instanceName }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.messages)) {
+          const remoteMsgs: ChatMessage[] = data.messages;
+          const combinedMap = new Map<string, ChatMessage>();
+
+          [...stored, ...remoteMsgs].forEach((m) => {
+            combinedMap.set(m.id || `${m.created_at}_${m.message}`, m);
+          });
+
+          const sorted = Array.from(combinedMap.values()).sort(
+            (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
+
+          setChatMessages(sorted);
+          return;
+        }
+      }
+
+      setChatMessages(stored);
+    } catch (e) {
+      console.error("Erro buscando histórico da Evolution API:", e);
+      const stored = EvolutionService.getStoredMessages(instanceName, clientPhone);
+      setChatMessages(stored);
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  };
+
+  // Polling automático das mensagens do cliente selecionado a cada 6 segundos
+  useEffect(() => {
+    if (!selectedClient) return;
+    fetchEvolutionHistory(selectedClient.phone);
+
+    const interval = setInterval(() => {
+      fetchEvolutionHistory(selectedClient.phone);
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, [selectedClient?.id, selectedClient?.phone]);
+
   const prepareTemplate = (templateText: string, client: Client) => {
     const firstName = client.name.split(" ")[0];
     const personalized = templateText.replace(/{NOME}/g, firstName);
@@ -116,9 +170,7 @@ function ConversasContent() {
       notes: client.notes || "",
     });
     prepareTemplate(MESSAGE_TEMPLATES[0].text, client);
-
-    const stored = EvolutionService.getStoredMessages(instanceName, client.phone);
-    setChatMessages(stored);
+    fetchEvolutionHistory(client.phone);
   };
 
   const filteredClients = useMemo(() => {
@@ -168,6 +220,7 @@ function ConversasContent() {
 
         setChatMessages((prev) => [...prev, newMsg]);
         setDirectSendFeedback({ type: "success", text: "Mensagem enviada com sucesso no chat interno!" });
+        setCurrentMessage("");
 
         // Se o cliente estava em 'importados' ou 'frio', avança para 'morno' (Em Conversa)
         if (selectedClient.status === "importados" || selectedClient.status === "frio") {
@@ -217,7 +270,7 @@ function ConversasContent() {
           Central de Conversas
         </h1>
         <p className="text-xs md:text-sm text-[#64748B]">
-          Atendimento nativo 100% interno via Evolution API.
+          Atendimento nativo 100% interno via Evolution API com histórico em tempo real de mensagens enviadas e recebidas.
         </p>
       </div>
 
@@ -291,7 +344,7 @@ function ConversasContent() {
           </div>
         </div>
 
-        {/* COLUNA 2: Chat Interno */}
+        {/* COLUNA 2: Chat Interno com Histórico Real de Respostas */}
         <div className="lg:col-span-6 flex flex-col rounded-2xl border border-[#E2E8F0] bg-white shadow-sm overflow-hidden">
           {selectedClient ? (
             <div className="flex-1 flex flex-col p-4.5 space-y-3.5 overflow-y-auto">
@@ -306,8 +359,13 @@ function ConversasContent() {
                       {getStatusBadgeInfo(selectedClient.status).label}
                     </Badge>
                   </div>
-                  <div className="text-[11px] text-[#64748B] mt-0.5">
-                    {formatPhone(selectedClient.phone)}
+                  <div className="text-[11px] text-[#64748B] mt-0.5 flex items-center gap-2">
+                    <span>{formatPhone(selectedClient.phone)}</span>
+                    {isLoadingMessages && (
+                      <span className="text-[10px] text-[#FF6A00] flex items-center gap-1">
+                        <RefreshCw className="h-3 w-3 animate-spin" /> Atualizando...
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -334,36 +392,40 @@ function ConversasContent() {
                 </div>
               </div>
 
-              {/* Histórico Interno de Mensagens */}
-              <div className="h-44 overflow-y-auto bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 space-y-2">
+              {/* Histórico Interno de Mensagens Enviadas e Recebidas */}
+              <div className="h-56 overflow-y-auto bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 space-y-2.5">
                 {chatMessages.length > 0 ? (
-                  chatMessages.map((msg) => (
+                  chatMessages.map((msg, idx) => (
                     <div
-                      key={msg.id}
+                      key={msg.id || idx}
                       className={`flex flex-col ${
                         msg.direction === "outbound" ? "items-end" : "items-start"
                       }`}
                     >
                       <div
-                        className={`max-w-[80%] rounded-xl px-3 py-2 text-xs leading-relaxed ${
+                        className={`max-w-[82%] rounded-2xl px-3.5 py-2 text-xs leading-relaxed shadow-xs ${
                           msg.direction === "outbound"
-                            ? "bg-[#FF6A00] text-white rounded-br-none"
-                            : "bg-white border border-[#E2E8F0] text-[#0B0B0D] rounded-bl-none"
+                            ? "bg-[#FF6A00] text-white rounded-br-xs"
+                            : "bg-white border border-[#E2E8F0] text-[#0F172A] rounded-bl-xs font-medium"
                         }`}
                       >
                         {msg.message}
                       </div>
-                      <span className="text-[9px] text-[#94A3B8] mt-0.5 font-mono">
-                        {new Date(msg.created_at).toLocaleTimeString("pt-BR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
+                      <div className="flex items-center gap-1 mt-0.5 px-1 text-[9px] text-[#94A3B8] font-mono">
+                        <span>{msg.direction === "outbound" ? "Operador" : "Cliente"}</span>
+                        <span>•</span>
+                        <span>
+                          {new Date(msg.created_at).toLocaleTimeString("pt-BR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
                     </div>
                   ))
                 ) : (
                   <div className="h-full flex items-center justify-center text-center text-xs text-[#64748B]">
-                    Nenhuma mensagem registrada ainda no chat interno.
+                    Nenhuma mensagem registrada no WhatsApp ainda.
                   </div>
                 )}
               </div>
@@ -408,8 +470,8 @@ function ConversasContent() {
                 <Textarea
                   value={currentMessage}
                   onChange={(e) => setCurrentMessage(e.target.value)}
-                  className="flex-1 min-h-[100px] text-xs bg-[#F8FAFC] border-[#E2E8F0] text-[#0B0B0D] p-3 leading-relaxed rounded-xl focus-visible:ring-[#FF6A00]"
-                  placeholder="Digite sua mensagem..."
+                  className="flex-1 min-h-[90px] text-xs bg-[#F8FAFC] border-[#E2E8F0] text-[#0B0B0D] p-3 leading-relaxed rounded-xl focus-visible:ring-[#FF6A00]"
+                  placeholder="Digite sua resposta..."
                 />
               </div>
 
