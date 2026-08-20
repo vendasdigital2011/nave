@@ -20,6 +20,7 @@ import {
   Flame,
   Handshake,
   XCircle,
+  ArrowLeft,
 } from "lucide-react";
 import { KanbanColumn } from "./kanban-column";
 import { ClientCard } from "./client-card";
@@ -80,6 +81,7 @@ export function KanbanBoard() {
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
   const [targetColumnStatus, setTargetColumnStatus] = useState<ClientStatus>("importados");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isMovingBatch, setIsMovingBatch] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -93,6 +95,8 @@ export function KanbanBoard() {
   );
 
   const loadData = async () => {
+    // Executa migração automática de 'frio' (Contato Iniciado) para 'importados'
+    await DataService.moveAllFrioToImportados();
     const data = await DataService.getClients();
     setClients(data);
   };
@@ -100,6 +104,13 @@ export function KanbanBoard() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleMoveAllFrioToImportados = async () => {
+    setIsMovingBatch(true);
+    await DataService.moveAllFrioToImportados();
+    await loadData();
+    setIsMovingBatch(false);
+  };
 
   const filteredClients = clients.filter((c) => {
     if (!searchTerm) return true;
@@ -180,7 +191,19 @@ export function KanbanBoard() {
             className="w-full text-xs rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-[#0B0B0D] placeholder:text-[#64748B] focus:outline-none focus:ring-1 focus:ring-[#FF6A00]"
           />
         </div>
-        <div className="flex items-center gap-2 text-xs text-[#64748B] w-full sm:w-auto justify-end">
+
+        <div className="flex items-center gap-3 text-xs text-[#64748B] w-full sm:w-auto justify-end">
+          {counts.frio > 0 && (
+            <button
+              type="button"
+              onClick={handleMoveAllFrioToImportados}
+              disabled={isMovingBatch}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#F3E8FF] text-[#7E22CE] border border-[#E9D5FF] font-bold hover:bg-[#7E22CE] hover:text-white transition-all text-xs"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>Mover Contato Iniciado ({counts.frio}) → Importados</span>
+            </button>
+          )}
           <span>
             Exibindo <strong>{filteredClients.length}</strong> de {clients.length} clientes
           </span>

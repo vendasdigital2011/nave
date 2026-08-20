@@ -28,7 +28,7 @@ const DEFAULT_SAMPLE_CLIENTS: Client[] = [
     phone: "(77) 98863-0116",
     current_plan: "50 Mega",
     target_plan: "100 Mega",
-    status: "frio",
+    status: "importados",
     nps_score: null,
     wants_upgrade: false,
     gave_referral: false,
@@ -142,6 +142,39 @@ export class DataService {
     } catch {
       return this.getLocalClients();
     }
+  }
+
+  static async moveAllFrioToImportados(operatorEmail: string = "admin@navetech.com.br"): Promise<number> {
+    const local = this.getLocalClients();
+    let count = 0;
+    const now = new Date().toISOString();
+    const updated = local.map((c) => {
+      if (c.status === "frio") {
+        count++;
+        return { ...c, status: "importados" as ClientStatus, updated_at: now };
+      }
+      return c;
+    });
+    this.setLocalClients(updated);
+
+    if (count > 0) {
+      this.addAuditLog({
+        operator_email: operatorEmail,
+        action: `Moveu ${count} clientes da coluna Contato Iniciado para Importados`,
+      });
+    }
+
+    try {
+      const supabase = createClient();
+      await supabase
+        .from("clients")
+        .update({ status: "importados", updated_at: now })
+        .eq("status", "frio");
+    } catch (e) {
+      console.error("Erro atualizando Supabase:", e);
+    }
+
+    return count;
   }
 
   static async updateClientStatus(
