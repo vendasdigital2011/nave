@@ -142,16 +142,16 @@ export function KanbanBoard() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3.5 w-full overflow-hidden">
       {/* Search and Filters bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-[#E2E8F0] shadow-sm">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-[#E2E8F0] shadow-sm">
         <div className="relative w-full sm:w-80">
           <input
             type="text"
             placeholder="Buscar por nome ou telefone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full text-xs rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-[#0B0B0D] placeholder:text-[#64748B] focus:outline-none focus:ring-1 focus:ring-[#FF6A00]"
+            className="w-full text-xs rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1.5 text-[#0B0B0D] placeholder:text-[#64748B] focus:outline-none focus:ring-1 focus:ring-[#FF6A00]"
           />
         </div>
         <div className="flex items-center gap-2 text-xs text-[#64748B] w-full sm:w-auto justify-end">
@@ -161,14 +161,14 @@ export function KanbanBoard() {
         </div>
       </div>
 
-      {/* DnD Board - 6 Colunas Comerciais */}
+      {/* DnD Board - 6 Colunas em 100% da tela sem rolagem lateral */}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-3.5 overflow-x-auto pb-4 items-start">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 w-full items-start">
           {COLUMNS.map((column) => {
             const columnClients = filteredClients.filter((c) => c.status === column.id);
             return (
