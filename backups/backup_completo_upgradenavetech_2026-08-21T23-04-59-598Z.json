@@ -1,0 +1,76 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-08-21T23:04:59.598Z",
+  "app": "NaveProspect - Upgrade 100M Navetech Telecom",
+  "total_clients": 4,
+  "clients": [
+    {
+      "id": "c1",
+      "name": "ADELSA DE JESUS SANTOS",
+      "phone": "(77) 99966-8387",
+      "current_plan": "50 Mega",
+      "target_plan": "100 Mega",
+      "status": "morno",
+      "nps_score": null,
+      "wants_upgrade": false,
+      "gave_referral": false,
+      "operator_email": "admin@navetech.com.br",
+      "feedback_first_contact": "Primeiro contato feito para mudança de roteador",
+      "notes": "Aguardando confirmação do horário de visita técnica",
+      "created_at": "2026-08-18T23:04:59.597Z",
+      "updated_at": "2026-08-21T23:04:59.598Z"
+    },
+    {
+      "id": "c2",
+      "name": "ADEIDES MOREIRA DA SILVA",
+      "phone": "(77) 98863-0116",
+      "current_plan": "50 Mega",
+      "target_plan": "100 Mega",
+      "status": "importados",
+      "nps_score": null,
+      "wants_upgrade": false,
+      "gave_referral": false,
+      "operator_email": "admin@navetech.com.br",
+      "notes": "Aguardando primeiro contato",
+      "created_at": "2026-08-19T23:04:59.598Z",
+      "updated_at": "2026-08-21T23:04:59.598Z"
+    },
+    {
+      "id": "c3",
+      "name": "ADENIDES DOS SANTOS PARDIM",
+      "phone": "(77) 98100-5915",
+      "current_plan": "50 Mega",
+      "target_plan": "100 Mega",
+      "status": "quente",
+      "nps_score": 9,
+      "wants_upgrade": true,
+      "gave_referral": true,
+      "referral_name": "Marcos Pardim (Irmão)",
+      "referral_phone": "(77) 99122-3344",
+      "operator_email": "admin@navetech.com.br",
+      "notes": "Muito interessado no dobro de velocidade para home office",
+      "created_at": "2026-08-20T23:04:59.598Z",
+      "updated_at": "2026-08-21T23:04:59.598Z"
+    },
+    {
+      "id": "c4",
+      "name": "ALEX ANTONIO RIBEIRO DA SILVA",
+      "phone": "(77) 99963-5691",
+      "current_plan": "50 Mega",
+      "target_plan": "100 Mega",
+      "status": "vendido",
+      "nps_score": 10,
+      "wants_upgrade": true,
+      "gave_referral": false,
+      "operator_email": "admin@navetech.com.br",
+      "notes": "Upgrade ativado com sucesso. Roteador Gigabit instalado.",
+      "created_at": "2026-08-17T23:04:59.598Z",
+      "updated_at": "2026-08-21T23:04:59.598Z"
+    }
+  ],
+  "config": {
+    "evolution_api_url": "https://evolutionapi.vps10855.panel.icontainer.net",
+    "evolution_instance": "naveprospect",
+    "supabase_url": "https://supabase.vps10855.panel.icontainer.net"
+  }
+}
