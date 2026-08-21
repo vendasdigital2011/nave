@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 
 export async function createClient() {
   const cookieStore = await cookies();
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://supabase.vps10855.panel.icontainer.net:8443';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://supabase.vps10855.panel.icontainer.net';
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
   return createServerClient(
@@ -35,7 +35,7 @@ export async function createClient() {
 }
 
 export function createServiceClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://supabase.vps10855.panel.icontainer.net:8443';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://supabase.vps10855.panel.icontainer.net';
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
   return createSupabaseClient(supabaseUrl, supabaseServiceKey, {
