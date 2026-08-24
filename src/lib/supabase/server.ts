@@ -4,8 +4,8 @@ import { cookies } from 'next/headers';
 
 export async function createClient() {
   const cookieStore = await cookies();
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://supabase.vps10855.panel.icontainer.net';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://srpanthkbljrcguwdofz.supabase.co';
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
   return createServerClient(
     supabaseUrl,
@@ -35,7 +35,7 @@ export async function createClient() {
 }
 
 export function createServiceClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://supabase.vps10855.panel.icontainer.net';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://srpanthkbljrcguwdofz.supabase.co';
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
   return createSupabaseClient(supabaseUrl, supabaseServiceKey, {
