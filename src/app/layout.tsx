@@ -24,6 +24,19 @@ export default function RootLayout({
     <html lang="pt-BR">
       <head>
         <link rel="icon" href="/images/brand/favicon.png" type="image/png" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                  for (let registration of registrations) {
+                    registration.unregister();
+                  }
+                });
+              }
+            `,
+          }}
+        />
       </head>
       <body className={inter.className}>
         <AppLayout>{children}</AppLayout>
