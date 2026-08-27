@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const path = require('path');
 
 console.log('====================================================');
@@ -29,15 +29,19 @@ if (supabaseUrl) {
     supabaseUrl.includes('8443') ||
     supabaseUrl.includes('vps10855') ||
     supabaseUrl.includes('icontainer.net') ||
-    supabaseUrl.includes('supabase.vps10855.panel.icontainer.net')
+    supabaseUrl.includes('supabase.vps10855.panel.icontainer.net') ||
+    supabaseUrl.includes('srpanthkbljrcguwdofz')
   ) {
-    console.error('\n❌ ERRO CRÍTICO: NEXT_PUBLIC_SUPABASE_URL aponta para a VPS antiga ou porta 8443!');
+    console.error('\n❌ ERRO CRÍTICO: NEXT_PUBLIC_SUPABASE_URL aponta para a VPS antiga ou projeto antigo descartado!');
     console.error('URL PROIBIDA:', supabaseUrl);
     process.exit(1);
   }
 
-  if (!supabaseUrl.startsWith('https://') || !supabaseUrl.includes('supabase.co')) {
-    console.error('\n❌ ERRO CRÍTICO: NEXT_PUBLIC_SUPABASE_URL precisa ser HTTPS oficial do Supabase Cloud (supabase.co)!');
+  if (
+    !supabaseUrl.startsWith('https://') ||
+    supabaseUrl !== 'https://cehrtqnvxeugjqkzfnvz.supabase.co'
+  ) {
+    console.error('\n❌ ERRO CRÍTICO: NEXT_PUBLIC_SUPABASE_URL precisa ser EXCLUSIVAMENTE o novo Supabase Cloud oficial (https://cehrtqnvxeugjqkzfnvz.supabase.co)!');
     console.error('URL RECEBIDA:', supabaseUrl);
     process.exit(1);
   }

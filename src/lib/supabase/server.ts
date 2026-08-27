@@ -2,7 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
-const ALLOWED_SUPABASE_HOST = "srpanthkbljrcguwdofz.supabase.co";
+const ALLOWED_SUPABASE_HOST = "cehrtqnvxeugjqkzfnvz.supabase.co";
 
 function validateSupabaseUrl(url: string | undefined): string {
   if (!url) {
