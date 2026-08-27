@@ -48,7 +48,7 @@ export class DataService {
     const { data, error } = await supabase
       .from("clients")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("name", { ascending: true });
 
     if (error) {
       console.error("Erro ao buscar clientes no Supabase Cloud:", error);
