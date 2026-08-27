@@ -37,7 +37,9 @@ export default function ConfiguracoesPage() {
   const [evolutionMessage, setEvolutionMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    setAuditLogs(DataService.getAuditLogs());
+    DataService.getAuditLogs().then((logs) => {
+      if (logs) setAuditLogs(logs);
+    });
   }, []);
 
   const checkEvolutionConnection = async () => {

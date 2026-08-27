@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/audit-supabase.js",
     "build": "next build",
+    "audit:supabase": "node scripts/audit-supabase.js",
     "start": "next start",
     "lint": "next lint"
   },

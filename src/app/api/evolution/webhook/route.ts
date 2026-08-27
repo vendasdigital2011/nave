@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { EvolutionService } from "@/lib/evolution-api";
-import { createClient } from "@/lib/supabase/client";
+import { createServiceClient } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
         // Atualiza o status do cliente no Supabase para 'morno' (Em Conversa) quando ele responde!
         try {
-          const supabase = createClient();
+          const supabase = createServiceClient();
           const { data: clients } = await supabase.from("clients").select("id, status, phone");
           if (clients && clients.length > 0) {
             const target = clients.find(

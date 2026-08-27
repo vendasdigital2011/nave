@@ -1,178 +1,92 @@
-import { Client, ClientStatus, Interaction, AuditLog, DashboardMetrics } from "@/types/database";
+import { Client, ClientStatus, AuditLog, DashboardMetrics } from "@/types/database";
 import { createClient } from "./supabase/client";
 
-const LOCAL_STORAGE_KEY = "upgradenavetech_clients_backup_v1";
-const INTERACTIONS_STORAGE_KEY = "upgradenavetech_interactions_backup_v1";
-const AUDIT_LOGS_STORAGE_KEY = "upgradenavetech_audit_logs_backup_v1";
-
-const DEFAULT_SAMPLE_CLIENTS: Client[] = [
-  {
-    id: "c1",
-    name: "ADELSA DE JESUS SANTOS",
-    phone: "(77) 99966-8387",
-    current_plan: "50 Mega",
-    target_plan: "100 Mega",
-    status: "morno",
-    nps_score: null,
-    wants_upgrade: false,
-    gave_referral: false,
-    operator_email: "admin@navetech.com.br",
-    feedback_first_contact: "Primeiro contato feito para mudança de roteador",
-    notes: "Aguardando confirmação do horário de visita técnica",
-    created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "c2",
-    name: "ADEIDES MOREIRA DA SILVA",
-    phone: "(77) 98863-0116",
-    current_plan: "50 Mega",
-    target_plan: "100 Mega",
-    status: "importados",
-    nps_score: null,
-    wants_upgrade: false,
-    gave_referral: false,
-    operator_email: "admin@navetech.com.br",
-    notes: "Aguardando primeiro contato",
-    created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "c3",
-    name: "ADENIDES DOS SANTOS PARDIM",
-    phone: "(77) 98100-5915",
-    current_plan: "50 Mega",
-    target_plan: "100 Mega",
-    status: "quente",
-    nps_score: 9,
-    wants_upgrade: true,
-    gave_referral: true,
-    referral_name: "Marcos Pardim (Irmão)",
-    referral_phone: "(77) 99122-3344",
-    operator_email: "admin@navetech.com.br",
-    notes: "Muito interessado no dobro de velocidade para home office",
-    created_at: new Date(Date.now() - 86400000 * 1).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "c4",
-    name: "ALEX ANTONIO RIBEIRO DA SILVA",
-    phone: "(77) 99963-5691",
-    current_plan: "50 Mega",
-    target_plan: "100 Mega",
-    status: "vendido",
-    nps_score: 10,
-    wants_upgrade: true,
-    gave_referral: false,
-    operator_email: "admin@navetech.com.br",
-    notes: "Upgrade ativado com sucesso. Roteador Gigabit instalado.",
-    created_at: new Date(Date.now() - 86400000 * 4).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
 export class DataService {
-  private static getLocalClients(): Client[] {
-    if (typeof window === "undefined") return DEFAULT_SAMPLE_CLIENTS;
+  static async getAuditLogs(): Promise<AuditLog[]> {
     try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (stored) {
-        return JSON.parse(stored);
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("audit_logs")
+        .select("*")
+        .order("timestamp", { ascending: false })
+        .limit(100);
+
+      if (error) {
+        console.error("Erro ao buscar logs de auditoria no Supabase:", error);
+        return [];
       }
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(DEFAULT_SAMPLE_CLIENTS));
-      return DEFAULT_SAMPLE_CLIENTS;
-    } catch {
-      return DEFAULT_SAMPLE_CLIENTS;
-    }
-  }
 
-  private static setLocalClients(clients: Client[]) {
-    if (typeof window === "undefined") return;
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(clients));
-    } catch (e) {
-      console.error("Erro salvando localmente:", e);
-    }
-  }
-
-  static getAuditLogs(): AuditLog[] {
-    if (typeof window === "undefined") return [];
-    try {
-      const stored = localStorage.getItem(AUDIT_LOGS_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
+      return (data as AuditLog[]) || [];
+    } catch (err) {
+      console.error("Erro inesperado ao buscar audit logs:", err);
       return [];
     }
   }
 
-  static addAuditLog(log: Omit<AuditLog, "id" | "timestamp">): AuditLog {
+  static async addAuditLog(log: Omit<AuditLog, "id" | "timestamp">): Promise<AuditLog | null> {
     const newLog: AuditLog = {
       ...log,
-      id: "log_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+      id: "log_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
       timestamp: new Date().toISOString(),
     };
 
-    if (typeof window !== "undefined") {
-      try {
-        const list = this.getAuditLogs();
-        list.unshift(newLog);
-        localStorage.setItem(AUDIT_LOGS_STORAGE_KEY, JSON.stringify(list.slice(0, 100)));
-      } catch (e) {
-        console.error("Erro registrando log de auditoria:", e);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from("audit_logs").insert([newLog]);
+      if (error) {
+        console.error("Erro ao salvar log de auditoria no Supabase:", error);
       }
+      return newLog;
+    } catch (err) {
+      console.error("Erro inesperado ao salvar audit log:", err);
+      return newLog;
     }
-
-    return newLog;
   }
 
   static async getClients(): Promise<Client[]> {
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("clients")
-        .select("*")
-        .order("created_at", { ascending: false });
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("clients")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-      if (error || !data || data.length === 0) {
-        return this.getLocalClients();
-      }
-
-      this.setLocalClients(data);
-      return data;
-    } catch {
-      return this.getLocalClients();
+    if (error) {
+      console.error("Erro ao buscar clientes no Supabase Cloud:", error);
+      throw error;
     }
+
+    return (data as Client[]) || [];
   }
 
   static async moveAllFrioToImportados(operatorEmail: string = "admin@navetech.com.br"): Promise<number> {
-    const local = this.getLocalClients();
-    let count = 0;
+    const supabase = createClient();
     const now = new Date().toISOString();
-    const updated = local.map((c) => {
-      if (c.status === "frio") {
-        count++;
-        return { ...c, status: "importados" as ClientStatus, updated_at: now };
-      }
-      return c;
+
+    const { data: frios, error: fetchErr } = await supabase
+      .from("clients")
+      .select("id")
+      .eq("status", "frio");
+
+    if (fetchErr || !frios || frios.length === 0) {
+      return 0;
+    }
+
+    const count = frios.length;
+
+    const { error: updateErr } = await supabase
+      .from("clients")
+      .update({ status: "importados", updated_at: now })
+      .eq("status", "frio");
+
+    if (updateErr) {
+      console.error("Erro ao migrar status frio para importados no Supabase:", updateErr);
+      throw updateErr;
+    }
+
+    await this.addAuditLog({
+      operator_email: operatorEmail,
+      action: `Moveu ${count} clientes da coluna Contato Iniciado para Importados`,
     });
-    this.setLocalClients(updated);
-
-    if (count > 0) {
-      this.addAuditLog({
-        operator_email: operatorEmail,
-        action: `Moveu ${count} clientes da coluna Contato Iniciado para Importados`,
-      });
-    }
-
-    try {
-      const supabase = createClient();
-      await supabase
-        .from("clients")
-        .update({ status: "importados", updated_at: now })
-        .eq("status", "frio");
-    } catch (e) {
-      console.error("Erro atualizando Supabase:", e);
-    }
 
     return count;
   }
@@ -182,47 +96,47 @@ export class DataService {
     newStatus: ClientStatus,
     operatorEmail: string = "admin@navetech.com.br"
   ): Promise<boolean> {
+    const supabase = createClient();
     const now = new Date().toISOString();
-    const local = this.getLocalClients();
-    const target = local.find((c) => c.id === id);
-    const oldStatus = target ? target.status : null;
-    const clientName = target ? target.name : "Cliente";
 
-    if (target) {
-      target.status = newStatus;
-      target.updated_at = now;
-      target.operator_email = operatorEmail;
-      if (newStatus === "vendido") {
-        target.sold_at = now;
-        target.wants_upgrade = true;
-      }
-      this.setLocalClients(local);
+    const { data: currentClient } = await supabase
+      .from("clients")
+      .select("name, status")
+      .eq("id", id)
+      .maybeSingle();
 
-      this.addAuditLog({
-        operator_email: operatorEmail,
-        action: `Alterou status de "${oldStatus}" para "${newStatus}"`,
-        target_client_id: id,
-        target_client_name: clientName,
-      });
+    const oldStatus = currentClient?.status || null;
+    const clientName = currentClient?.name || "Cliente";
+
+    const updates: Record<string, unknown> = {
+      status: newStatus,
+      updated_at: now,
+      operator_email: operatorEmail,
+    };
+
+    if (newStatus === "vendido") {
+      updates.sold_at = now;
+      updates.wants_upgrade = true;
     }
 
-    try {
-      const supabase = createClient();
-      const updates: Record<string, unknown> = {
-        status: newStatus,
-        updated_at: now,
-        operator_email: operatorEmail,
-      };
-      if (newStatus === "vendido") {
-        updates.sold_at = now;
-        updates.wants_upgrade = true;
-      }
+    const { error } = await supabase
+      .from("clients")
+      .update(updates)
+      .eq("id", id);
 
-      await supabase.from("clients").update(updates).eq("id", id);
-      return true;
-    } catch {
-      return true;
+    if (error) {
+      console.error("Erro ao atualizar status do cliente no Supabase:", error);
+      throw error;
     }
+
+    await this.addAuditLog({
+      operator_email: operatorEmail,
+      action: `Alterou status de "${oldStatus}" para "${newStatus}"`,
+      target_client_id: id,
+      target_client_name: clientName,
+    });
+
+    return true;
   }
 
   static async updateClient(
@@ -230,72 +144,66 @@ export class DataService {
     updates: Partial<Client>,
     operatorEmail: string = "admin@navetech.com.br"
   ): Promise<boolean> {
+    const supabase = createClient();
     const now = new Date().toISOString();
-    const local = this.getLocalClients();
-    const idx = local.findIndex((c) => c.id === id);
-    let clientName = "Cliente";
 
-    if (idx !== -1) {
-      clientName = local[idx].name;
-      local[idx] = {
-        ...local[idx],
-        ...updates,
-        operator_email: operatorEmail,
-        updated_at: now,
-      };
-      this.setLocalClients(local);
+    const payload = {
+      ...updates,
+      operator_email: operatorEmail,
+      updated_at: now,
+    };
 
-      this.addAuditLog({
-        operator_email: operatorEmail,
-        action: `Atualizou dados do cliente`,
-        target_client_id: id,
-        target_client_name: clientName,
-        details: JSON.stringify(updates),
-      });
+    const { error } = await supabase
+      .from("clients")
+      .update(payload)
+      .eq("id", id);
+
+    if (error) {
+      console.error("Erro ao atualizar cliente no Supabase:", error);
+      throw error;
     }
 
-    try {
-      const supabase = createClient();
-      await supabase
-        .from("clients")
-        .update({ ...updates, operator_email: operatorEmail, updated_at: now })
-        .eq("id", id);
-      return true;
-    } catch {
-      return true;
-    }
+    await this.addAuditLog({
+      operator_email: operatorEmail,
+      action: `Atualizou dados do cliente`,
+      target_client_id: id,
+      target_client_name: updates.name || "Cliente",
+      details: JSON.stringify(updates),
+    });
+
+    return true;
   }
 
   static async addClient(
     clientData: Omit<Client, "id" | "created_at" | "updated_at">,
     operatorEmail: string = "admin@navetech.com.br"
   ): Promise<Client> {
+    const supabase = createClient();
     const now = new Date().toISOString();
+
     const newClient: Client = {
       ...clientData,
-      id: "c_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+      id: "c_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
       operator_email: operatorEmail,
       created_at: now,
       updated_at: now,
     };
 
-    const local = this.getLocalClients();
-    local.unshift(newClient);
-    this.setLocalClients(local);
+    const { error } = await supabase
+      .from("clients")
+      .insert([newClient]);
 
-    this.addAuditLog({
+    if (error) {
+      console.error("Erro ao cadastrar cliente no Supabase:", error);
+      throw error;
+    }
+
+    await this.addAuditLog({
       operator_email: operatorEmail,
       action: `Cadastrou novo cliente`,
       target_client_id: newClient.id,
       target_client_name: newClient.name,
     });
-
-    try {
-      const supabase = createClient();
-      await supabase.from("clients").insert([newClient]);
-    } catch (e) {
-      console.error("Erro salvando no Supabase:", e);
-    }
 
     return newClient;
   }
@@ -304,57 +212,66 @@ export class DataService {
     id: string,
     operatorEmail: string = "admin@navetech.com.br"
   ): Promise<boolean> {
-    const local = this.getLocalClients();
-    const target = local.find((c) => c.id === id);
-    const filtered = local.filter((c) => c.id !== id);
-    this.setLocalClients(filtered);
+    const supabase = createClient();
 
-    if (target) {
-      this.addAuditLog({
-        operator_email: operatorEmail,
-        action: `Excluiu cliente`,
-        target_client_id: id,
-        target_client_name: target.name,
-      });
+    const { data: currentClient } = await supabase
+      .from("clients")
+      .select("name")
+      .eq("id", id)
+      .maybeSingle();
+
+    const clientName = currentClient?.name || "Cliente";
+
+    const { error } = await supabase
+      .from("clients")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Erro ao excluir cliente no Supabase:", error);
+      throw error;
     }
 
-    try {
-      const supabase = createClient();
-      await supabase.from("clients").delete().eq("id", id);
-      return true;
-    } catch {
-      return true;
-    }
+    await this.addAuditLog({
+      operator_email: operatorEmail,
+      action: `Excluiu cliente`,
+      target_client_id: id,
+      target_client_name: clientName,
+    });
+
+    return true;
   }
 
   static async importBulkClients(
     clientsData: Omit<Client, "id" | "created_at" | "updated_at">[],
     operatorEmail: string = "admin@navetech.com.br"
   ): Promise<number> {
+    if (!clientsData || clientsData.length === 0) return 0;
+
+    const supabase = createClient();
     const now = new Date().toISOString();
+
     const newClients: Client[] = clientsData.map((c, idx) => ({
       ...c,
-      id: "imp_" + Date.now() + "_" + idx,
+      id: "imp_" + Date.now() + "_" + idx + "_" + Math.random().toString(36).substring(2, 5),
       operator_email: operatorEmail,
       created_at: now,
       updated_at: now,
     }));
 
-    const local = this.getLocalClients();
-    const updatedList = [...newClients, ...local];
-    this.setLocalClients(updatedList);
+    const { error } = await supabase
+      .from("clients")
+      .insert(newClients);
 
-    this.addAuditLog({
+    if (error) {
+      console.error("Erro ao importar clientes em lote no Supabase:", error);
+      throw error;
+    }
+
+    await this.addAuditLog({
       operator_email: operatorEmail,
       action: `Importou lote de ${newClients.length} clientes`,
     });
-
-    try {
-      const supabase = createClient();
-      await supabase.from("clients").insert(newClients);
-    } catch (e) {
-      console.error("Erro ao importar em lote no Supabase:", e);
-    }
 
     return newClients.length;
   }
@@ -406,3 +323,4 @@ export class DataService {
     };
   }
 }
+
