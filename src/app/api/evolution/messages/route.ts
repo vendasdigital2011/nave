@@ -3,7 +3,7 @@ import { ChatMessage } from "@/lib/evolution-api";
 
 export async function POST(req: NextRequest) {
   try {
-    const { number, instanceName = "naveprospect" } = await req.json();
+    const { number, instanceName = (process.env.EVOLUTION_INSTANCE_NAME || "nave") } = await req.json();
 
     if (!number) {
       return NextResponse.json({ success: false, error: "Número não informado." }, { status: 400 });
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     const jidNoCountry = cleanNumber.startsWith("55") ? `${cleanNumber.slice(2)}@s.whatsapp.net` : `${cleanNumber}@s.whatsapp.net`;
 
     const baseUrl = (process.env.EVOLUTION_API_URL || "https://evolutionapi.vps10855.panel.icontainer.net").replace(/\/$/, "");
-    const apiKey = process.env.EVOLUTION_API_KEY || "PMhtTHmZZyRRN4A7mi8m2FYHMEH6FYf8";
+    const apiKey = process.env.EVOLUTION_API_KEY || "70F1798929B5-44FA-95E9-03C39D69E51E";
     const url = `${baseUrl.replace("http://", "https://")}/chat/findMessages/${instanceName}`;
 
     // Buscar mensagens por remoteJidAlt e remoteJid

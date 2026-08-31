@@ -76,7 +76,7 @@ function ConversasContent() {
   const [isSavingData, setIsSavingData] = useState(false);
   const [dataSavedSuccess, setDataSavedSuccess] = useState(false);
 
-  const instanceName = "naveprospect";
+  const instanceName = process.env.NEXT_PUBLIC_EVOLUTION_INSTANCE_NAME || "nave";
 
   const loadData = async () => {
     const data = await DataService.getClients();

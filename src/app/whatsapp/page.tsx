@@ -21,7 +21,7 @@ import Link from "next/link";
 
 export default function WhatsAppPage() {
   const [currentUser] = useState("admin@navetech.com.br");
-  const instanceName = "naveprospect";
+  const instanceName = process.env.NEXT_PUBLIC_EVOLUTION_INSTANCE_NAME || "nave";
 
   const [connectionState, setConnectionState] = useState<"open" | "close" | "connecting" | "unknown">("unknown");
   const [connectedInstance, setConnectedInstance] = useState<EvolutionInstance | null>(null);

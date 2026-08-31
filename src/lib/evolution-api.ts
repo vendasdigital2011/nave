@@ -45,11 +45,19 @@ export class EvolutionService {
   }
 
   private static getApiKey(): string {
-    return process.env.EVOLUTION_API_KEY || "PMhtTHmZZyRRN4A7mi8m2FYHMEH6FYf8";
+    return (
+      process.env.EVOLUTION_API_KEY ||
+      process.env.NEXT_PUBLIC_EVOLUTION_API_KEY ||
+      "70F1798929B5-44FA-95E9-03C39D69E51E"
+    );
   }
 
   static getInstanceNameForUser(userIdentifier: string = "admin@navetech.com.br"): string {
-    return process.env.EVOLUTION_INSTANCE_NAME || "naveprospect";
+    return (
+      process.env.EVOLUTION_INSTANCE_NAME ||
+      process.env.NEXT_PUBLIC_EVOLUTION_INSTANCE_NAME ||
+      "nave"
+    );
   }
 
   private static async request<T>(

@@ -24,8 +24,8 @@ export default function ConfiguracoesPage() {
   const [adminEmail, setAdminEmail] = useState("admin@navetech.com.br");
   const [adminPassword, setAdminPassword] = useState("");
   const [evolutionUrl, setEvolutionUrl] = useState("https://evolutionapi.vps10855.panel.icontainer.net");
-  const [instanceName, setInstanceName] = useState("naveprospect");
-  const [evolutionApiKey, setEvolutionApiKey] = useState("PMhtTHmZZyRRN4A7mi8m2FYHMEH6FYf8");
+  const [instanceName, setInstanceName] = useState("nave");
+  const [evolutionApiKey, setEvolutionApiKey] = useState("70F1798929B5-44FA-95E9-03C39D69E51E");
   const [campaignOrigin, setCampaignOrigin] = useState("50 Mega");
   const [campaignTarget, setCampaignTarget] = useState("100 Mega");
   const [isSaved, setIsSaved] = useState(false);
