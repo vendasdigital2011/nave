@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import {
   Dialog,
@@ -18,27 +18,21 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
-import { DataService } from "@/lib/data-service";
-import { ClientStatus } from "@/types/database";
+import { Campaign } from "@/types/database";
 
 interface ImportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImportComplete?: () => void;
   onImportSuccess?: () => void;
+  defaultCampaignId?: string;
 }
 
 interface ParsedRecord {
   name: string;
   phone: string;
-  current_plan: string;
-  target_plan: string;
-  status: ClientStatus;
-  feedback_first_contact?: string;
-  feedback_second_contact?: string;
+  condominium?: string;
   notes?: string;
-  wants_upgrade: boolean;
-  gave_referral: boolean;
 }
 
 export function ImportModal({
@@ -46,19 +40,35 @@ export function ImportModal({
   onOpenChange,
   onImportComplete,
   onImportSuccess,
+  defaultCampaignId = "c0000000-0000-0000-0000-000000000001",
 }: ImportModalProps) {
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [campaignId, setCampaignId] = useState(defaultCampaignId);
   const [file, setFile] = useState<File | null>(null);
   const [records, setRecords] = useState<ParsedRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [importedCount, setImportedCount] = useState<number | null>(null);
+  const [importedSummary, setImportedSummary] = useState<any | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      fetch("/api/campaigns")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.success && data.campaigns && data.campaigns.length > 0) {
+            setCampaigns(data.campaigns);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [open]);
 
   const resetState = () => {
     setFile(null);
     setRecords([]);
     setError(null);
-    setImportedCount(null);
+    setImportedSummary(null);
     setIsLoading(false);
   };
 
@@ -95,43 +105,14 @@ export function ImportModal({
 
       if (!name && !rawPhone) continue;
 
-      const feedbackKeys = Object.keys(row).filter((k) =>
-        k.toLowerCase().includes("feed") || k.toLowerCase().includes("obs") || k.toLowerCase().includes("status")
-      );
-
-      let feedback1 = "";
-      let feedback2 = "";
-      let status: ClientStatus = "importados";
-
-      if (feedbackKeys.length > 0) feedback1 = String(row[feedbackKeys[0]] || "");
-      if (feedbackKeys.length > 1) feedback2 = String(row[feedbackKeys[1]] || "");
-
-      const combinedFeed = (feedback1 + " " + feedback2).toLowerCase();
-      if (combinedFeed.includes("desativ") || combinedFeed.includes("cancel")) {
-        status = "desativado";
-      } else if (combinedFeed.includes("vend") || combinedFeed.includes("fech") || combinedFeed.includes("instal")) {
-        status = "vendido";
-      } else if (combinedFeed.includes("interess") || combinedFeed.includes("quente")) {
-        status = "quente";
-      } else if (combinedFeed.includes("morno") || combinedFeed.includes("convers")) {
-        status = "morno";
-      } else if (combinedFeed.includes("iniciad") || combinedFeed.includes("enviad")) {
-        status = "frio";
-      } else {
-        status = "importados";
-      }
+      const condKey = Object.keys(row).find((k) => k.toLowerCase().includes("condom") || k.toLowerCase().includes("bairro"));
+      const notesKey = Object.keys(row).find((k) => k.toLowerCase().includes("obs") || k.toLowerCase().includes("feed"));
 
       parsed.push({
-        name: name || "Cliente sem Nome",
+        name: name || "Cliente",
         phone: rawPhone,
-        current_plan: "50 Mega",
-        target_plan: "100 Mega",
-        status,
-        feedback_first_contact: feedback1 || undefined,
-        feedback_second_contact: feedback2 || undefined,
-        notes: feedback1 || feedback2 ? `Feedback: ${[feedback1, feedback2].filter(Boolean).join(" | ")}` : undefined,
-        wants_upgrade: status === "quente" || status === "vendido",
-        gave_referral: false,
+        condominium: condKey ? String(row[condKey]).trim() : "Geral",
+        notes: notesKey ? String(row[notesKey]).trim() : undefined,
       });
     }
 
@@ -155,8 +136,7 @@ export function ImportModal({
       const workbook = XLSX.read(buffer, { type: "array" });
       processWorkbookData(workbook);
     } catch (err: any) {
-      console.error(err);
-      setError("Erro ao ler o arquivo Excel. Verifique a extensão (.xlsx, .csv, .xls).");
+      setError("Erro ao ler a planilha (.xlsx, .csv).");
     } finally {
       setIsLoading(false);
     }
@@ -165,15 +145,29 @@ export function ImportModal({
   const handleConfirmImport = async () => {
     if (records.length === 0) return;
     setIsLoading(true);
+    setError(null);
 
     try {
-      const count = await DataService.importBulkClients(records);
-      setImportedCount(count);
-      onImportComplete?.();
-      onImportSuccess?.();
+      const targetCampId = campaignId || "c0000000-0000-0000-0000-000000000001";
+      const res = await fetch(`/api/campaigns/${targetCampId}/imports`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          file_name: file?.name || "planilha.xlsx",
+          rows: records,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setImportedSummary(data.summary);
+        onImportComplete?.();
+        onImportSuccess?.();
+      } else {
+        setError(data.error || "Falha na importação do lote.");
+      }
     } catch (err: any) {
-      console.error(err);
-      setError("Falha ao salvar clientes no banco de dados.");
+      setError("Erro de conexão ao salvar clientes.");
     } finally {
       setIsLoading(false);
     }
@@ -191,16 +185,34 @@ export function ImportModal({
         <DialogHeader className="border-b border-[#E2E8F0] pb-3">
           <DialogTitle className="text-base font-bold text-[#0B0B0D] flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5 text-[#FF6A00]" />
-            Importar Planilha de Clientes
+            Importar Lote de Clientes
           </DialogTitle>
           <DialogDescription className="text-xs text-[#64748B]">
-            Selecione uma planilha Excel (.xlsx, .csv) contendo os nomes e telefones dos clientes.
+            Selecione a campanha e envie o arquivo Excel/CSV com deduplicação automática.
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-4 space-y-4">
-          {importedCount === null ? (
+          {importedSummary === null ? (
             <>
+              {/* Campaign Selector */}
+              {campaigns.length > 0 && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#0B0B0D]">Campanha de Destino</label>
+                  <select
+                    value={campaignId}
+                    onChange={(e) => setCampaignId(e.target.value)}
+                    className="w-full h-10 px-3 text-xs sm:text-sm font-semibold border border-[#E2E8F0] rounded-xl bg-white text-[#0B0B0D] focus:outline-[#FF6A00]"
+                  >
+                    {campaigns.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Dropzone */}
               <div
                 onClick={() => fileInputRef.current?.click()}
@@ -220,49 +232,55 @@ export function ImportModal({
                   {file ? file.name : "Clique para selecionar a planilha"}
                 </div>
                 <p className="text-[11px] text-[#64748B]">
-                  Suporta arquivos .xlsx, .xls e .csv com colunas Nome e Telefone
+                  Formatos aceitos: .xlsx, .xls, .csv
                 </p>
               </div>
 
-              {/* Error Alert */}
               {error && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
 
-              {/* Preview records */}
-              {records.length > 0 && !error && (
-                <div className="p-3 rounded-xl bg-[#FFF7F1] border border-[#FFD0A8] text-xs text-[#0B0B0D] space-y-1">
-                  <div className="font-bold text-[#FF6A00] flex items-center justify-between">
-                    <span>Pronto para importar</span>
-                    <span>{records.length} contatos encontrados</span>
+              {records.length > 0 && (
+                <div className="rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-3 text-xs space-y-1">
+                  <div className="font-bold text-[#0B0B0D]">
+                    {records.length} registros prontos para validação
                   </div>
-                  <p className="text-[11px] text-[#64748B]">
-                    Exemplo: {records[0].name} ({records[0].phone}) → Status: Importados
-                  </p>
+                  <div className="text-[11px] text-[#64748B]">
+                    Amostra: {records[0].name} ({records[0].phone})
+                  </div>
                 </div>
               )}
             </>
           ) : (
-            /* Success Feedback */
-            <div className="py-6 text-center space-y-3">
-              <div className="h-12 w-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-                <CheckCircle2 className="h-7 w-7" />
+            <div className="py-4 text-center space-y-3">
+              <div className="h-12 w-12 rounded-full bg-[#ECFDF5] text-[#059669] flex items-center justify-center mx-auto">
+                <CheckCircle2 className="h-6 w-6" />
               </div>
-              <h3 className="text-sm font-bold text-[#0B0B0D]">
-                Importação Concluída com Sucesso!
+              <h3 className="font-bold text-sm text-[#0B0B0D]">
+                Lote Processado com Sucesso!
               </h3>
-              <p className="text-xs text-[#64748B]">
-                {importedCount} clientes foram adicionados na coluna <strong>Importados</strong> e já estão disponíveis no Kanban.
-              </p>
+              <div className="text-xs text-[#64748B] space-y-1">
+                <p>
+                  <strong>+{importedSummary.linked_leads}</strong> novos leads vinculados ao funil.
+                </p>
+                <p>
+                  <strong>{importedSummary.duplicate_leads}</strong> registros repetidos preservados.
+                </p>
+                {importedSummary.rejected_rows > 0 && (
+                  <p className="text-rose-600">
+                    {importedSummary.rejected_rows} linhas ignoradas por telefone inválido.
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </div>
 
-        <DialogFooter className="border-t border-[#E2E8F0] pt-3 flex justify-end gap-2">
-          {importedCount === null ? (
+        <DialogFooter className="border-t border-[#E2E8F0] pt-3 flex gap-2">
+          {importedSummary === null ? (
             <>
               <Button
                 type="button"
@@ -278,12 +296,15 @@ export function ImportModal({
                 size="sm"
                 disabled={records.length === 0 || isLoading}
                 onClick={handleConfirmImport}
-                className="bg-[#FF6A00] hover:bg-[#E85C00] text-white font-bold text-xs min-w-[100px]"
+                className="bg-[#FF6A00] hover:bg-[#E85C00] text-white font-bold text-xs"
               >
                 {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                    Processando...
+                  </>
                 ) : (
-                  `Importar ${records.length > 0 ? records.length : ""} Clientes`
+                  "Confirmar Importação"
                 )}
               </Button>
             </>
@@ -291,13 +312,10 @@ export function ImportModal({
             <Button
               type="button"
               size="sm"
-              onClick={() => {
-                resetState();
-                onOpenChange(false);
-              }}
-              className="bg-[#FF6A00] hover:bg-[#E85C00] text-white font-bold text-xs"
+              onClick={() => onOpenChange(false)}
+              className="bg-[#0B0B0D] hover:bg-[#1E293B] text-white font-bold text-xs w-full"
             >
-              Concluir
+              Fechar
             </Button>
           )}
         </DialogFooter>

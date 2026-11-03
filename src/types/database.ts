@@ -52,6 +52,7 @@ export interface CampaignLead {
   client_id: string;
   stage_id: string;
   assigned_user_id?: string;
+  first_import_batch_id?: string;
   notes?: string;
   converted_at?: string;
   lost_at?: string;
@@ -59,6 +60,40 @@ export interface CampaignLead {
   version: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface ImportBatch {
+  id: string;
+  campaign_id: string;
+  uploaded_by?: string;
+  operator_email?: string;
+  file_name: string;
+  file_hash?: string;
+  status: 'pending' | 'processing' | 'completed' | 'partial' | 'failed';
+  total_rows: number;
+  valid_rows: number;
+  inserted_clients: number;
+  linked_leads: number;
+  duplicate_leads: number;
+  rejected_rows: number;
+  error_summary?: string;
+  started_at: string;
+  completed_at?: string;
+  created_at: string;
+}
+
+export interface ImportBatchRow {
+  id: string;
+  batch_id: string;
+  row_number: number;
+  raw_name?: string;
+  raw_phone?: string;
+  normalized_phone?: string;
+  result: 'inserted' | 'linked' | 'duplicate' | 'rejected';
+  error_code?: string;
+  client_id?: string;
+  campaign_lead_id?: string;
+  created_at: string;
 }
 
 export interface KanbanLeadCard extends CampaignLead {

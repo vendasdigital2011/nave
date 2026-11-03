@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import {
   Upload,
@@ -9,334 +9,444 @@ import {
   AlertCircle,
   Loader2,
   ArrowRight,
+  Layers,
+  History,
+  FileText,
+  Copy,
+  Users,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { DataService } from "@/lib/data-service";
-import { ClientStatus } from "@/types/database";
-import Link from "next/link";
+import { toast } from "sonner";
+import { Campaign, ImportBatch } from "@/types/database";
 
-interface ParsedRecord {
+interface PreviewRow {
   name: string;
   phone: string;
-  current_plan: string;
-  target_plan: string;
-  status: ClientStatus;
-  feedback_first_contact?: string;
-  feedback_second_contact?: string;
   notes?: string;
-  wants_upgrade: boolean;
-  gave_referral: boolean;
+  condominium?: string;
+  current_plan?: string;
+  target_plan?: string;
+  status?: string;
 }
 
 export default function ImportacaoPage() {
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<"upload" | "history">("upload");
+  const [batches, setBatches] = useState<ImportBatch[]>([]);
+
+  // Estado do Arquivo e Prévia
   const [file, setFile] = useState<File | null>(null);
-  const [records, setRecords] = useState<ParsedRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [importedCount, setImportedCount] = useState<number | null>(null);
+  const [rows, setRows] = useState<PreviewRow[]>([]);
+  const [isParsing, setIsParsing] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const resetState = () => {
-    setFile(null);
-    setRecords([]);
-    setError(null);
-    setImportedCount(null);
-    setIsLoading(false);
+  // Carregar campanhas
+  useEffect(() => {
+    fetch("/api/campaigns")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.success && data.campaigns && data.campaigns.length > 0) {
+          setCampaigns(data.campaigns);
+          // Preferir Leads Hotspot para novas importações se existir
+          const hotspot = data.campaigns.find((c: any) => c.type === "hotspot");
+          setSelectedCampaignId(hotspot ? hotspot.id : data.campaigns[0].id);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Carregar histórico de lotes da campanha selecionada
+  const fetchBatches = () => {
+    if (!selectedCampaignId) return;
+    fetch(`/api/campaigns/${selectedCampaignId}/imports`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.success) {
+          setBatches(data.batches || []);
+        }
+      })
+      .catch(() => {});
   };
 
-  const processWorkbookData = (workbook: XLSX.WorkBook) => {
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const rawJson = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, { defval: "" });
-
-    if (rawJson.length === 0) {
-      setError("A planilha está vazia.");
-      setIsLoading(false);
-      return;
+  useEffect(() => {
+    if (activeTab === "history") {
+      fetchBatches();
     }
+  }, [selectedCampaignId, activeTab]);
 
-    const parsed: ParsedRecord[] = [];
-
-    for (const row of rawJson) {
-      const nameKey = Object.keys(row).find(
-        (k) =>
-          k.toLowerCase().includes("cliente") ||
-          k.toLowerCase().includes("nome") ||
-          k.toLowerCase().includes("name")
-      );
-      const name = nameKey ? String(row[nameKey]).trim() : "";
-
-      const phoneKey = Object.keys(row).find(
-        (k) =>
-          k.toLowerCase().includes("contato") ||
-          k.toLowerCase().includes("telefone") ||
-          k.toLowerCase().includes("whatsapp") ||
-          k.toLowerCase().includes("celular")
-      );
-      const rawPhone = phoneKey ? String(row[phoneKey]).trim() : "";
-
-      if (!name && !rawPhone) continue;
-
-      const feedbackKeys = Object.keys(row).filter((k) =>
-        k.toLowerCase().includes("feed") || k.toLowerCase().includes("obs") || k.toLowerCase().includes("status")
-      );
-
-      let feedback1 = "";
-      let feedback2 = "";
-      let status: ClientStatus = "frio";
-
-      if (feedbackKeys.length > 0) feedback1 = String(row[feedbackKeys[0]] || "");
-      if (feedbackKeys.length > 1) feedback2 = String(row[feedbackKeys[1]] || "");
-
-      const combinedFeed = (feedback1 + " " + feedback2).toLowerCase();
-      if (combinedFeed.includes("desativ") || combinedFeed.includes("cancel")) {
-        status = "desativado";
-      } else if (combinedFeed.includes("vend") || combinedFeed.includes("fech") || combinedFeed.includes("instal")) {
-        status = "vendido";
-      } else if (combinedFeed.includes("interess") || combinedFeed.includes("quente")) {
-        status = "quente";
-      } else if (feedback1 || feedback2) {
-        status = "morno";
-      }
-
-      parsed.push({
-        name: name || "Cliente sem Nome",
-        phone: rawPhone,
-        current_plan: "50 Mega",
-        target_plan: "100 Mega",
-        status,
-        feedback_first_contact: feedback1 || undefined,
-        feedback_second_contact: feedback2 || undefined,
-        notes: feedback1 || feedback2 ? `Feedback: ${[feedback1, feedback2].filter(Boolean).join(" | ")}` : undefined,
-        wants_upgrade: status === "quente" || status === "vendido",
-        gave_referral: false,
-      });
-    }
-
-    if (parsed.length === 0) {
-      setError("Não foram encontradas colunas de Nome e Telefone válidas.");
-    } else {
-      setRecords(parsed);
-    }
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    setError(null);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
 
     setFile(selectedFile);
-    setIsLoading(true);
+    setImportResult(null);
+    setIsParsing(true);
 
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const buffer = evt.target?.result;
+        const workbook = XLSX.read(buffer, { type: "binary" });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const rawJson: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+        if (rawJson.length === 0) {
+          toast.error("A planilha selecionada está vazia.");
+          setIsParsing(false);
+          return;
+        }
+
+        const parsedRows: PreviewRow[] = [];
+
+        for (const row of rawJson) {
+          // Detecção dinâmica de colunas
+          const nameKey = Object.keys(row).find(
+            (k) =>
+              k.toLowerCase().includes("cliente") ||
+              k.toLowerCase().includes("nome") ||
+              k.toLowerCase().includes("name")
+          );
+          const name = nameKey ? String(row[nameKey]).trim() : "";
+
+          const phoneKey = Object.keys(row).find(
+            (k) =>
+              k.toLowerCase().includes("contato") ||
+              k.toLowerCase().includes("telefone") ||
+              k.toLowerCase().includes("whatsapp") ||
+              k.toLowerCase().includes("celular")
+          );
+          const phone = phoneKey ? String(row[phoneKey]).trim() : "";
+
+          const condKey = Object.keys(row).find(
+            (k) => k.toLowerCase().includes("condom") || k.toLowerCase().includes("bairro")
+          );
+          const condominium = condKey ? String(row[condKey]).trim() : "Geral";
+
+          const notesKey = Object.keys(row).find(
+            (k) => k.toLowerCase().includes("obs") || k.toLowerCase().includes("feed") || k.toLowerCase().includes("nota")
+          );
+          const notes = notesKey ? String(row[notesKey]).trim() : "";
+
+          if (name || phone) {
+            parsedRows.push({
+              name,
+              phone,
+              condominium,
+              notes,
+            });
+          }
+        }
+
+        setRows(parsedRows);
+        toast.success(`${parsedRows.length} linhas lidas com sucesso da planilha!`);
+      } catch (err: any) {
+        toast.error("Erro ao processar planilha: " + err.message);
+      } finally {
+        setIsParsing(false);
+      }
+    };
+    reader.readAsBinaryString(selectedFile);
+  };
+
+  const handleExecuteImport = async () => {
+    if (!selectedCampaignId) {
+      toast.error("Selecione a campanha de destino.");
+      return;
+    }
+
+    if (rows.length === 0) {
+      toast.error("Nenhuma linha pronta para importação.");
+      return;
+    }
+
+    setIsImporting(true);
     try {
-      const buffer = await selectedFile.arrayBuffer();
-      const workbook = XLSX.read(buffer, { type: "array" });
-      processWorkbookData(workbook);
+      const res = await fetch(`/api/campaigns/${selectedCampaignId}/imports`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          file_name: file?.name || "importacao.xlsx",
+          rows,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setImportResult(data.summary);
+        toast.success(`Lote importado! ${data.summary.linked_leads} leads vinculados com sucesso.`);
+        setRows([]);
+        setFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      } else {
+        toast.error(data.error || "Falha ao executar importação.");
+      }
     } catch (err: any) {
-      setError("Erro ao ler arquivo: " + err.message);
+      toast.error("Erro na importação: " + err.message);
     } finally {
-      setIsLoading(false);
+      setIsImporting(false);
     }
   };
 
-  const handleImport = async () => {
-    if (records.length === 0) return;
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const count = await DataService.importBulkClients(records);
-      setImportedCount(count);
-    } catch (err: any) {
-      setError("Erro ao salvar no banco de dados: " + err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const activeCampaign = campaigns.find((c) => c.id === selectedCampaignId);
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div>
-        <h1 className="text-xl md:text-2xl font-bold text-[#0B0B0D] tracking-tight">
-          Importação de Planilhas
-        </h1>
-        <p className="text-xs md:text-sm text-[#64748B]">
-          Carregue planilhas de clientes (XLSX, XLS ou CSV) para abastecer a campanha de upgrade de velocidade.
-        </p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#E2E8F0] pb-5">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-black text-[#0B0B0D] tracking-tight">
+              Importação Recorrente por Campanha
+            </h1>
+            <span className="rounded-md bg-[#FFF4EC] text-[#FF6A00] text-xs font-bold px-2 py-0.5 border border-[#FFD0A8]">
+              Fase 3
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-[#64748B] mt-1">
+            Importe planilhas semanais (.xlsx, .csv) com deduplicação e histórico auditável de lotes.
+          </p>
+        </div>
+
+        {/* Campaign Selector */}
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-bold text-[#64748B] shrink-0">Campanha Alvo:</label>
+          <select
+            value={selectedCampaignId}
+            onChange={(e) => setSelectedCampaignId(e.target.value)}
+            className="h-10 px-3 text-xs sm:text-sm font-bold border border-[#E2E8F0] rounded-xl bg-white text-[#0B0B0D] focus:outline-[#FF6A00]"
+          >
+            {campaigns.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name} ({c.type === "upgrade" ? "Migração" : "Aquisição"})
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Upload Box */}
-        <div className="md:col-span-2 space-y-4">
-          <Card className="bg-white border-[#E2E8F0] shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-sm font-bold text-[#0B0B0D] flex items-center gap-2">
-                <FileSpreadsheet className="h-4 w-4 text-[#FF6A00]" />
-                Upload de Planilha
-              </CardTitle>
-              <CardDescription className="text-xs text-[#64748B]">
-                Selecione a planilha com as colunas de clientes 50 Mega para processamento automático.
-              </CardDescription>
-            </CardHeader>
+      {/* Tabs Switcher */}
+      <div className="flex gap-2 border-b border-[#E2E8F0] pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveTab("upload")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            activeTab === "upload"
+              ? "bg-[#FF6A00] text-white shadow-xs"
+              : "text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0B0B0D]"
+          }`}
+        >
+          <Upload className="h-4 w-4" />
+          <span>Nova Importação</span>
+        </button>
 
-            <CardContent className="space-y-4">
-              {!file && (
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#E2E8F0] bg-[#F8FAFC] p-10 text-center cursor-pointer hover:border-[#FF6A00] hover:bg-[#FFF4EC]/40 transition-all group"
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FFF4EC] text-[#FF6A00] mb-3 group-hover:scale-105 transition-transform border border-[#FFD0A8]">
-                    <Upload className="h-6 w-6" />
-                  </div>
-                  <span className="text-xs font-bold text-[#0B0B0D]">
-                    Clique aqui ou arraste seu arquivo
-                  </span>
-                  <span className="text-[11px] text-[#64748B] mt-1">
-                    Formatos suportados: .xlsx, .xls, .csv
-                  </span>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".xlsx,.xls,.csv"
-                    className="hidden"
-                    onChange={handleFileChange}
-                  />
+        <button
+          type="button"
+          onClick={() => setActiveTab("history")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            activeTab === "history"
+              ? "bg-[#FF6A00] text-white shadow-xs"
+              : "text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0B0B0D]"
+          }`}
+        >
+          <History className="h-4 w-4" />
+          <span>Histórico de Lotes</span>
+        </button>
+      </div>
+
+      {/* TAB 1: Upload e Prévia */}
+      {activeTab === "upload" && (
+        <div className="space-y-6">
+          {/* Sucesso Anterior */}
+          {importResult && (
+            <div className="rounded-2xl border border-[#BBF7D0] bg-[#F0FDF4] p-5">
+              <div className="flex items-center gap-2 text-[#16A34A] font-black text-sm mb-3">
+                <CheckCircle2 className="h-5 w-5" />
+                Lote Importado com Sucesso!
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
+                <div className="bg-white p-3 rounded-xl border border-[#BBF7D0]">
+                  <span className="text-[#64748B] block">Total Linhas:</span>
+                  <span className="text-lg font-black text-[#0B0B0D]">{importResult.total_rows}</span>
                 </div>
-              )}
-
-              {file && (
-                <div className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FF6A00] text-white font-bold">
-                        <FileSpreadsheet className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-[#0B0B0D]">{file.name}</div>
-                        <div className="text-[11px] text-[#64748B]">
-                          {records.length} clientes válidos identificados
-                        </div>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={resetState}
-                      className="text-xs text-[#64748B] hover:text-rose-600"
-                    >
-                      Remover
-                    </Button>
-                  </div>
-
-                  {records.length > 0 && !importedCount && (
-                    <div className="border-t border-[#E2E8F0] pt-3">
-                      <span className="text-xs font-bold text-[#0B0B0D] block mb-2">
-                        Prévia dos dados:
-                      </span>
-                      <div className="max-h-48 overflow-y-auto space-y-1.5 text-xs">
-                        {records.slice(0, 5).map((r, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-[#E2E8F0] text-[#0B0B0D]"
-                          >
-                            <span className="font-bold truncate max-w-[200px]">{r.name}</span>
-                            <span className="text-[#64748B] font-mono text-[11px]">{r.phone}</span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F1F5F9] text-[#475569] uppercase">
-                              {r.status}
-                            </span>
-                          </div>
-                        ))}
-                        {records.length > 5 && (
-                          <div className="text-center text-[11px] text-[#64748B] py-1">
-                            + {records.length - 5} outros clientes na lista
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {error && (
-                    <div className="flex items-center gap-2 rounded-xl bg-rose-50 p-3 text-xs text-rose-700 border border-rose-200">
-                      <AlertCircle className="h-4 w-4 shrink-0" />
-                      <span>{error}</span>
-                    </div>
-                  )}
-
-                  {importedCount !== null && (
-                    <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-2">
-                      <CheckCircle2 className="h-8 w-8 text-emerald-600" />
-                      <h3 className="text-xs font-bold text-emerald-900">
-                        {importedCount} clientes importados com sucesso!
-                      </h3>
-                      <p className="text-[11px] text-emerald-700 max-w-sm">
-                        Os contatos já estão disponíveis no Kanban e na lista de clientes.
-                      </p>
-                      <div className="flex gap-2 mt-2">
-                        <Link href="/kanban">
-                          <Button size="sm" className="bg-[#FF6A00] hover:bg-[#E85C00] text-white text-xs font-bold">
-                            Ver no Kanban <ArrowRight className="ml-1 h-3 w-3" />
-                          </Button>
-                        </Link>
-                        <Button variant="outline" size="sm" onClick={resetState} className="text-xs border-[#E2E8F0]">
-                          Nova Importação
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                <div className="bg-white p-3 rounded-xl border border-[#BBF7D0]">
+                  <span className="text-[#64748B] block">Leads Vinculados:</span>
+                  <span className="text-lg font-black text-[#16A34A]">+{importResult.linked_leads}</span>
                 </div>
-              )}
-            </CardContent>
+                <div className="bg-white p-3 rounded-xl border border-[#BBF7D0]">
+                  <span className="text-[#64748B] block">Novos Clientes Criados:</span>
+                  <span className="text-lg font-black text-[#2563EB]">+{importResult.inserted_clients}</span>
+                </div>
+                <div className="bg-white p-3 rounded-xl border border-[#BBF7D0]">
+                  <span className="text-[#64748B] block">Duplicados (Preservados):</span>
+                  <span className="text-lg font-black text-[#F59E0B]">{importResult.duplicate_leads}</span>
+                </div>
+                <div className="bg-white p-3 rounded-xl border border-[#BBF7D0]">
+                  <span className="text-[#64748B] block">Rejeitados/Inválidos:</span>
+                  <span className="text-lg font-black text-[#EF4444]">{importResult.rejected_rows}</span>
+                </div>
+              </div>
+            </div>
+          )}
 
-            {records.length > 0 && importedCount === null && (
-              <CardFooter className="border-t border-[#E2E8F0] pt-4 flex justify-end gap-2">
-                <Button variant="outline" onClick={resetState} disabled={isLoading} className="text-xs border-[#E2E8F0]">
-                  Cancelar
-                </Button>
+          {/* Área de Drop de Arquivo */}
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#E2E8F0] bg-white p-10 hover:border-[#FF6A00] transition-colors cursor-pointer group text-center"
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <div className="h-14 w-14 rounded-2xl bg-[#FFF4EC] text-[#FF6A00] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+              <FileSpreadsheet className="h-7 w-7" />
+            </div>
+            <h3 className="font-bold text-sm text-[#0B0B0D]">
+              {file ? file.name : "Clique para selecionar ou arraste sua planilha Excel/CSV"}
+            </h3>
+            <p className="text-xs text-[#64748B] mt-1 max-w-sm">
+              Suporta colunas como Cliente/Nome, Contato/Telefone, Bairro/Condomínio e Observações.
+            </p>
+            {file && (
+              <span className="mt-3 text-[11px] font-bold text-[#FF6A00] bg-[#FFF4EC] px-3 py-1 rounded-full border border-[#FFD0A8]">
+                {(file.size / 1024).toFixed(1)} KB selecionado
+              </span>
+            )}
+          </div>
+
+          {/* Prévia dos Dados */}
+          {rows.length > 0 && (
+            <div className="space-y-4 rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-4">
+                <div>
+                  <h3 className="text-sm font-black text-[#0B0B0D]">
+                    Prévia do Lote: {rows.length} registros prontos
+                  </h3>
+                  <p className="text-xs text-[#64748B]">
+                    Destino: <strong className="text-[#0B0B0D]">{activeCampaign?.name}</strong>
+                  </p>
+                </div>
+
                 <Button
-                  onClick={handleImport}
-                  disabled={isLoading}
-                  className="bg-[#FF6A00] hover:bg-[#E85C00] text-white text-xs font-bold"
+                  onClick={handleExecuteImport}
+                  disabled={isImporting}
+                  className="bg-[#FF6A00] hover:bg-[#E85C00] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs"
                 >
-                  {isLoading ? (
+                  {isImporting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processando...
+                      <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                      Processando Deduplicação...
                     </>
                   ) : (
-                    `Confirmar Importação (${records.length} Clientes)`
+                    <>
+                      <Upload className="h-4 w-4 mr-1.5" />
+                      Confirmar e Importar Lote
+                    </>
                   )}
                 </Button>
-              </CardFooter>
-            )}
-          </Card>
-        </div>
+              </div>
 
-        {/* Instructions */}
-        <div className="space-y-4">
-          <Card className="bg-white border-[#E2E8F0] shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-xs font-bold text-[#0B0B0D]">
-                Padrão de Colunas
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-xs text-[#64748B]">
-              <div className="p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
-                <span className="font-bold text-[#0B0B0D] block">Nome:</span>
-                <span className="text-[11px] text-[#64748B]">Colunas com "CLIENTE", "NOME"</span>
+              {/* Tabela de Amostra (Primeiras 10 linhas) */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-[#F8FAFC] text-[#64748B] font-bold uppercase tracking-wider border-b border-[#E2E8F0]">
+                      <th className="px-3 py-2">#</th>
+                      <th className="px-3 py-2">Nome</th>
+                      <th className="px-3 py-2">Telefone Lido</th>
+                      <th className="px-3 py-2">Condomínio / Local</th>
+                      <th className="px-3 py-2">Observações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E2E8F0]">
+                    {rows.slice(0, 10).map((r, idx) => (
+                      <tr key={idx} className="hover:bg-[#F8FAFC]">
+                        <td className="px-3 py-2 text-[#94A3B8] font-mono">{idx + 1}</td>
+                        <td className="px-3 py-2 font-bold text-[#0B0B0D]">{r.name || "—"}</td>
+                        <td className="px-3 py-2 text-[#2563EB] font-mono">{r.phone || "—"}</td>
+                        <td className="px-3 py-2 text-[#64748B]">{r.condominium || "Geral"}</td>
+                        <td className="px-3 py-2 text-[#64748B] truncate max-w-xs">{r.notes || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
-                <span className="font-bold text-[#0B0B0D] block">Contato:</span>
-                <span className="text-[11px] text-[#64748B]">Colunas com "CONTATO", "TELEFONE"</span>
-              </div>
-              <div className="p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
-                <span className="font-bold text-[#0B0B0D] block">Feedbacks:</span>
-                <span className="text-[11px] text-[#64748B]">Colunas com "FEEDBECK", "OBS"</span>
-              </div>
-            </CardContent>
-          </Card>
+              {rows.length > 10 && (
+                <p className="text-[11px] text-[#94A3B8] text-center pt-2">
+                  Exibindo 10 de {rows.length} linhas. Todas serão processadas na confirmação.
+                </p>
+              )}
+            </div>
+          )}
         </div>
-      </div>
+      )}
+
+      {/* TAB 2: Histórico de Lotes */}
+      {activeTab === "history" && (
+        <div className="rounded-2xl border border-[#E2E8F0] bg-white shadow-xs overflow-hidden">
+          <div className="p-4 border-b border-[#E2E8F0] flex items-center justify-between">
+            <h3 className="text-sm font-black text-[#0B0B0D]">
+              Histórico de Lotes Importados na Campanha
+            </h3>
+            <span className="text-xs text-[#64748B]">
+              Total de {batches.length} execuções registradas
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="bg-[#F8FAFC] text-[#64748B] font-bold uppercase tracking-wider border-b border-[#E2E8F0]">
+                  <th className="px-4 py-3">Arquivo</th>
+                  <th className="px-4 py-3">Data/Hora</th>
+                  <th className="px-4 py-3">Operador</th>
+                  <th className="px-4 py-3">Total Linhas</th>
+                  <th className="px-4 py-3">Novos Leads</th>
+                  <th className="px-4 py-3">Duplicados</th>
+                  <th className="px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E2E8F0]">
+                {batches.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center text-[#94A3B8]">
+                      Nenhum lote importado para esta campanha até o momento.
+                    </td>
+                  </tr>
+                ) : (
+                  batches.map((b) => (
+                    <tr key={b.id} className="hover:bg-[#F8FAFC]">
+                      <td className="px-4 py-3 font-bold text-[#0B0B0D] flex items-center gap-1.5">
+                        <FileText className="h-4 w-4 text-[#FF6A00]" />
+                        {b.file_name}
+                      </td>
+                      <td className="px-4 py-3 text-[#64748B]">
+                        {new Date(b.created_at).toLocaleString("pt-BR")}
+                      </td>
+                      <td className="px-4 py-3 text-[#64748B]">{b.operator_email || "admin"}</td>
+                      <td className="px-4 py-3 font-bold text-[#0B0B0D]">{b.total_rows}</td>
+                      <td className="px-4 py-3 font-bold text-[#16A34A]">+{b.linked_leads}</td>
+                      <td className="px-4 py-3 text-[#F59E0B]">{b.duplicate_leads}</td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#10B981] bg-[#F0FDF4] px-2 py-0.5 rounded-full border border-[#BBF7D0]">
+                          Concluído
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
