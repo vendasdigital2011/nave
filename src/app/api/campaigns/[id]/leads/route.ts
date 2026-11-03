@@ -14,14 +14,14 @@ async function getAuthenticatedUser(): Promise<AuthUser | null> {
   }
 }
 
-// Map legado para stage_id fixo do Upgrade
+// Map legado para stage_id fixo do Upgrade (UUID hexadecimal válido)
 const LEGACY_STAGE_MAP: Record<string, string> = {
-  importados: "s0000000-0000-0000-0000-000000000001",
-  frio: "s0000000-0000-0000-0000-000000000002",
-  morno: "s0000000-0000-0000-0000-000000000003",
-  quente: "s0000000-0000-0000-0000-000000000004",
-  vendido: "s0000000-0000-0000-0000-000000000005",
-  desativado: "s0000000-0000-0000-0000-000000000006",
+  importados: "10000000-0000-0000-0000-000000000001",
+  frio: "10000000-0000-0000-0000-000000000002",
+  morno: "10000000-0000-0000-0000-000000000003",
+  quente: "10000000-0000-0000-0000-000000000004",
+  vendido: "10000000-0000-0000-0000-000000000005",
+  desativado: "10000000-0000-0000-0000-000000000006",
 };
 
 // GET /api/campaigns/[id]/leads - Listar leads da campanha para o Kanban
@@ -72,7 +72,7 @@ export async function GET(
         id: "lead_" + c.id,
         campaign_id: "c0000000-0000-0000-0000-000000000001",
         client_id: c.id,
-        stage_id: LEGACY_STAGE_MAP[c.status] || "s0000000-0000-0000-0000-000000000001",
+        stage_id: LEGACY_STAGE_MAP[c.status] || "10000000-0000-0000-0000-000000000001",
         notes: c.notes,
         converted_at: c.sold_at,
         last_activity_at: c.updated_at || c.created_at,

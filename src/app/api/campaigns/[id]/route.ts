@@ -47,12 +47,12 @@ export async function GET(
             status: "active",
           },
           stages: [
-            { id: "s0000000-0000-0000-0000-000000000001", name: "Importados", position: 0, stage_kind: "open", color: "#64748B" },
-            { id: "s0000000-0000-0000-0000-000000000002", name: "Contato Iniciado", position: 1, stage_kind: "open", color: "#3B82F6" },
-            { id: "s0000000-0000-0000-0000-000000000003", name: "Em Negociação", position: 2, stage_kind: "open", color: "#F59E0B" },
-            { id: "s0000000-0000-0000-0000-000000000004", name: "Proposta Enviada", position: 3, stage_kind: "open", color: "#FF6A00" },
-            { id: "s0000000-0000-0000-0000-000000000005", name: "Vendido", position: 4, stage_kind: "won", color: "#10B981" },
-            { id: "s0000000-0000-0000-0000-000000000006", name: "Desativado", position: 5, stage_kind: "lost", color: "#EF4444" },
+            { id: "10000000-0000-0000-0000-000000000001", name: "Importados", position: 0, stage_kind: "open", color: "#64748B" },
+            { id: "10000000-0000-0000-0000-000000000002", name: "Contato Iniciado", position: 1, stage_kind: "open", color: "#3B82F6" },
+            { id: "10000000-0000-0000-0000-000000000003", name: "Em Negociação", position: 2, stage_kind: "open", color: "#F59E0B" },
+            { id: "10000000-0000-0000-0000-000000000004", name: "Proposta Enviada", position: 3, stage_kind: "open", color: "#FF6A00" },
+            { id: "10000000-0000-0000-0000-000000000005", name: "Vendido", position: 4, stage_kind: "won", color: "#10B981" },
+            { id: "10000000-0000-0000-0000-000000000006", name: "Desativado", position: 5, stage_kind: "lost", color: "#EF4444" },
           ],
         });
       }

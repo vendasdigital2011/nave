@@ -108,7 +108,7 @@ CREATE TRIGGER set_campaign_leads_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_campaigns_updated_at();
 
--- 9. POPULAÇÃO INICIAL DAS CAMPANHAS OFICIAIS (IDEMPOTENTE COM UUIDS FIXOS)
+-- 9. POPULAÇÃO INICIAL DAS CAMPANHAS OFICIAIS (IDEMPOTENTE COM UUIDS HEXADECIMAIS VÁLIDOS)
 
 -- Campanha 1: Upgrade 50 -> 100 Mega (Legado)
 INSERT INTO public.campaigns (id, name, type, description, status)
@@ -116,7 +116,7 @@ VALUES (
     'c0000000-0000-0000-0000-000000000001'::uuid,
     'Upgrade 50 → 100 Mega',
     'upgrade',
-    'Campanha oficial de migração de clientes 50 Mega para 100 Mega.',
+    'Campanha oficial de migração de clientes para 100 Mega.',
     'active'
 )
 ON CONFLICT (id) DO UPDATE
@@ -126,12 +126,12 @@ SET name = EXCLUDED.name,
 -- Etapas da Campanha 1 (Upgrade)
 INSERT INTO public.campaign_stages (id, campaign_id, name, position, stage_kind, color)
 VALUES
-    ('s0000000-0000-0000-0000-000000000001'::uuid, 'c0000000-0000-0000-0000-000000000001'::uuid, 'Importados', 0, 'open', '#64748B'),
-    ('s0000000-0000-0000-0000-000000000002'::uuid, 'c0000000-0000-0000-0000-000000000001'::uuid, 'Contato Iniciado', 1, 'open', '#3B82F6'),
-    ('s0000000-0000-0000-0000-000000000003'::uuid, 'c0000000-0000-0000-0000-000000000001'::uuid, 'Em Negociação', 2, 'open', '#F59E0B'),
-    ('s0000000-0000-0000-0000-000000000004'::uuid, 'c0000000-0000-0000-0000-000000000001'::uuid, 'Proposta Enviada', 3, 'open', '#FF6A00'),
-    ('s0000000-0000-0000-0000-000000000005'::uuid, 'c0000000-0000-0000-0000-000000000001'::uuid, 'Vendido', 4, 'won', '#10B981'),
-    ('s0000000-0000-0000-0000-000000000006'::uuid, 'c0000000-0000-0000-0000-000000000001'::uuid, 'Desativado', 5, 'lost', '#EF4444')
+    ('10000000-0000-0000-0000-000000000001'::uuid, 'c0000000-0000-0000-0000-000000000001'::uuid, 'Importados', 0, 'open', '#64748B'),
+    ('10000000-0000-0000-0000-000000000002'::uuid, 'c0000000-0000-0000-0000-000000000001'::uuid, 'Contato Iniciado', 1, 'open', '#3B82F6'),
+    ('10000000-0000-0000-0000-000000000003'::uuid, 'c0000000-0000-0000-0000-000000000001'::uuid, 'Em Negociação', 2, 'open', '#F59E0B'),
+    ('10000000-0000-0000-0000-000000000004'::uuid, 'c0000000-0000-0000-0000-000000000001'::uuid, 'Proposta Enviada', 3, 'open', '#FF6A00'),
+    ('10000000-0000-0000-0000-000000000005'::uuid, 'c0000000-0000-0000-0000-000000000001'::uuid, 'Vendido', 4, 'won', '#10B981'),
+    ('10000000-0000-0000-0000-000000000006'::uuid, 'c0000000-0000-0000-0000-000000000001'::uuid, 'Desativado', 5, 'lost', '#EF4444')
 ON CONFLICT (id) DO UPDATE
 SET name = EXCLUDED.name,
     position = EXCLUDED.position,
@@ -144,7 +144,7 @@ VALUES (
     'c0000000-0000-0000-0000-000000000002'::uuid,
     'Leads Hotspot',
     'hotspot',
-    'Prospecção de novos clientes originados dos Hotspots Wi-Fi Navetech.',
+    'Prospecção de novos clientes do Hotspot Wi-Fi Navetech.',
     'active'
 )
 ON CONFLICT (id) DO UPDATE
@@ -154,12 +154,12 @@ SET name = EXCLUDED.name,
 -- Etapas da Campanha 2 (Hotspot)
 INSERT INTO public.campaign_stages (id, campaign_id, name, position, stage_kind, color)
 VALUES
-    ('s0000000-0000-0000-0000-000000000011'::uuid, 'c0000000-0000-0000-0000-000000000002'::uuid, 'Novos Leads', 0, 'open', '#64748B'),
-    ('s0000000-0000-0000-0000-000000000012'::uuid, 'c0000000-0000-0000-0000-000000000002'::uuid, 'Em Contato', 1, 'open', '#3B82F6'),
-    ('s0000000-0000-0000-0000-000000000013'::uuid, 'c0000000-0000-0000-0000-000000000002'::uuid, 'Interessados', 2, 'open', '#F59E0B'),
-    ('s0000000-0000-0000-0000-000000000014'::uuid, 'c0000000-0000-0000-0000-000000000002'::uuid, 'Agendados', 3, 'open', '#8B5CF6'),
-    ('s0000000-0000-0000-0000-000000000015'::uuid, 'c0000000-0000-0000-0000-000000000002'::uuid, 'Convertidos', 4, 'won', '#10B981'),
-    ('s0000000-0000-0000-0000-000000000016'::uuid, 'c0000000-0000-0000-0000-000000000002'::uuid, 'Perdidos', 5, 'lost', '#EF4444')
+    ('20000000-0000-0000-0000-000000000001'::uuid, 'c0000000-0000-0000-0000-000000000002'::uuid, 'Novos Leads', 0, 'open', '#64748B'),
+    ('20000000-0000-0000-0000-000000000002'::uuid, 'c0000000-0000-0000-0000-000000000002'::uuid, 'Em Contato', 1, 'open', '#3B82F6'),
+    ('20000000-0000-0000-0000-000000000003'::uuid, 'c0000000-0000-0000-0000-000000000002'::uuid, 'Interessados', 2, 'open', '#F59E0B'),
+    ('20000000-0000-0000-0000-000000000004'::uuid, 'c0000000-0000-0000-0000-000000000002'::uuid, 'Agendados', 3, 'open', '#8B5CF6'),
+    ('20000000-0000-0000-0000-000000000005'::uuid, 'c0000000-0000-0000-0000-000000000002'::uuid, 'Convertidos', 4, 'won', '#10B981'),
+    ('20000000-0000-0000-0000-000000000006'::uuid, 'c0000000-0000-0000-0000-000000000002'::uuid, 'Perdidos', 5, 'lost', '#EF4444')
 ON CONFLICT (id) DO UPDATE
 SET name = EXCLUDED.name,
     position = EXCLUDED.position,
@@ -181,13 +181,13 @@ SELECT
     'c0000000-0000-0000-0000-000000000001'::uuid,
     c.id,
     CASE 
-        WHEN c.status = 'importados' THEN 's0000000-0000-0000-0000-000000000001'::uuid
-        WHEN c.status = 'frio' THEN 's0000000-0000-0000-0000-000000000002'::uuid
-        WHEN c.status = 'morno' THEN 's0000000-0000-0000-0000-000000000003'::uuid
-        WHEN c.status = 'quente' THEN 's0000000-0000-0000-0000-000000000004'::uuid
-        WHEN c.status = 'vendido' THEN 's0000000-0000-0000-0000-000000000005'::uuid
-        WHEN c.status = 'desativado' THEN 's0000000-0000-0000-0000-000000000006'::uuid
-        ELSE 's0000000-0000-0000-0000-000000000001'::uuid
+        WHEN c.status = 'importados' THEN '10000000-0000-0000-0000-000000000001'::uuid
+        WHEN c.status = 'frio' THEN '10000000-0000-0000-0000-000000000002'::uuid
+        WHEN c.status = 'morno' THEN '10000000-0000-0000-0000-000000000003'::uuid
+        WHEN c.status = 'quente' THEN '10000000-0000-0000-0000-000000000004'::uuid
+        WHEN c.status = 'vendido' THEN '10000000-0000-0000-0000-000000000005'::uuid
+        WHEN c.status = 'desativado' THEN '10000000-0000-0000-0000-000000000006'::uuid
+        ELSE '10000000-0000-0000-0000-000000000001'::uuid
     END,
     c.notes,
     CASE WHEN c.status = 'vendido' THEN COALESCE(c.sold_at, c.updated_at) ELSE NULL END,
@@ -211,7 +211,6 @@ DROP POLICY IF EXISTS "Acesso completo a membros de campanha" ON public.campaign
 DROP POLICY IF EXISTS "Leitura de leads para autenticados" ON public.campaign_leads;
 DROP POLICY IF EXISTS "Edição e movimentação de leads no Kanban" ON public.campaign_leads;
 
--- Políticas de Leitura e Edição
 CREATE POLICY "Leitura de campanhas para autenticados" ON public.campaigns
     FOR SELECT TO authenticated USING (true);
 

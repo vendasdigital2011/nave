@@ -43,42 +43,42 @@ const DEFAULT_UPGRADE_STAGES: {
   accentColor: string;
 }[] = [
   {
-    id: "s0000000-0000-0000-0000-000000000001",
+    id: "10000000-0000-0000-0000-000000000001",
     title: "Importados",
     legacyStatus: "importados",
     emoji: "📥",
     accentColor: "#7E22CE",
   },
   {
-    id: "s0000000-0000-0000-0000-000000000002",
+    id: "10000000-0000-0000-0000-000000000002",
     title: "Contato Iniciado",
     legacyStatus: "frio",
     emoji: "📩",
     accentColor: "#2563EB",
   },
   {
-    id: "s0000000-0000-0000-0000-000000000003",
+    id: "10000000-0000-0000-0000-000000000003",
     title: "Em Conversa",
     legacyStatus: "morno",
     emoji: "💬",
     accentColor: "#D97706",
   },
   {
-    id: "s0000000-0000-0000-0000-000000000004",
+    id: "10000000-0000-0000-0000-000000000004",
     title: "Interessado",
     legacyStatus: "quente",
     emoji: "🔥",
     accentColor: "#FF6A00",
   },
   {
-    id: "s0000000-0000-0000-0000-000000000005",
+    id: "10000000-0000-0000-0000-000000000005",
     title: "Fechado",
     legacyStatus: "vendido",
     emoji: "🏆",
     accentColor: "#059669",
   },
   {
-    id: "s0000000-0000-0000-0000-000000000006",
+    id: "10000000-0000-0000-0000-000000000006",
     title: "Não Interessado",
     legacyStatus: "desativado",
     emoji: "🚫",
