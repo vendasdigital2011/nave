@@ -192,6 +192,14 @@ export class EvolutionService {
     });
   }
 
+  static async logoutInstance(
+    instanceName: string
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
+    return this.request(`/instance/logout/${instanceName}`, {
+      method: "DELETE",
+    });
+  }
+
   // Local Chat Messages Store
   static getStoredMessages(instanceName: string, clientPhone?: string): ChatMessage[] {
     if (typeof window === "undefined") return [];

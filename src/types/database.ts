@@ -93,6 +93,23 @@ export interface LeadTransfer {
   created_at: string;
 }
 
+export interface WhatsAppInstance {
+  id: string;
+  provider: string;
+  provider_instance_name: string;
+  owner_user_id?: string;
+  display_phone_masked?: string;
+  profile_name?: string;
+  status: 'open' | 'close' | 'connecting' | 'disconnected';
+  is_active: boolean;
+  is_default: boolean;
+  connected_at?: string;
+  last_seen_at?: string;
+  created_at: string;
+  updated_at: string;
+  owner?: Profile;
+}
+
 export interface ImportBatch {
   id: string;
   campaign_id: string;

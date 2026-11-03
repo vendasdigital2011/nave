@@ -14,14 +14,21 @@ if (fs.existsSync(envLocalPath)) {
     if (trimmed && !trimmed.startsWith('#')) {
       const [k, ...v] = trimmed.split('=');
       if (k && v.length && !process.env[k.trim()]) {
-        process.env[k.trim()] = v.join('=').trim();
+        let val = v.join('=').trim();
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.slice(1, -1);
+        }
+        process.env[k.trim()] = val;
       }
     }
   });
 }
 
 // 2. Validar NEXT_PUBLIC_SUPABASE_URL
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+if (supabaseUrl) {
+  supabaseUrl = supabaseUrl.replace(/^['"]|['"]$/g, '').trim();
+}
 console.log('🔍 Validando NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl || '(não definida no processo)');
 
 if (supabaseUrl) {
