@@ -12,6 +12,7 @@ import {
   Settings,
   QrCode,
   ShieldCheck,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AuthUser } from "@/lib/auth-constants";
@@ -23,14 +24,19 @@ const navigationItems = [
     icon: LayoutDashboard,
   },
   {
-    name: "Clientes",
-    href: "/clientes",
-    icon: Users,
+    name: "Campanhas",
+    href: "/campanhas",
+    icon: Layers,
   },
   {
     name: "Kanban",
     href: "/kanban",
     icon: Kanban,
+  },
+  {
+    name: "Clientes",
+    href: "/clientes",
+    icon: Users,
   },
   {
     name: "Conversas",
@@ -102,7 +108,7 @@ export function Sidebar() {
           </div>
         </Link>
         <span className="rounded-md bg-[#FFF4EC] text-[#FF6A00] text-[10px] font-bold px-1.5 py-0.5 border border-[#FFD0A8]">
-          100M
+          CRM
         </span>
       </div>
 

@@ -2,6 +2,10 @@ export type ClientStatus = 'importados' | 'frio' | 'morno' | 'quente' | 'vendido
 
 export type UserRole = 'admin' | 'supervisor' | 'seller';
 
+export type CampaignStatus = 'active' | 'paused' | 'archived';
+
+export type StageKind = 'open' | 'won' | 'lost';
+
 export interface Profile {
   id: string;
   display_name: string;
@@ -10,6 +14,56 @@ export interface Profile {
   email?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Campaign {
+  id: string;
+  name: string;
+  type: 'upgrade' | 'hotspot' | 'custom' | string;
+  description?: string;
+  status: CampaignStatus;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CampaignStage {
+  id: string;
+  campaign_id: string;
+  name: string;
+  position: number;
+  stage_kind: StageKind;
+  color?: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface CampaignMember {
+  id: string;
+  campaign_id: string;
+  user_id: string;
+  role: string;
+  joined_at: string;
+}
+
+export interface CampaignLead {
+  id: string;
+  campaign_id: string;
+  client_id: string;
+  stage_id: string;
+  assigned_user_id?: string;
+  notes?: string;
+  converted_at?: string;
+  lost_at?: string;
+  last_activity_at: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface KanbanLeadCard extends CampaignLead {
+  client: Client;
+  assigned_to?: Profile;
 }
 
 export interface Client {
