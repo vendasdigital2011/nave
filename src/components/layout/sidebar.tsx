@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -9,11 +10,11 @@ import {
   MessageSquare,
   Upload,
   Settings,
-  ArrowUpRight,
-  Database,
   QrCode,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AuthUser } from "@/lib/auth-constants";
 
 const navigationItems = [
   {
@@ -47,6 +48,12 @@ const navigationItems = [
     icon: Upload,
   },
   {
+    name: "Equipe & RBAC",
+    href: "/usuarios",
+    icon: ShieldCheck,
+    adminOnly: true,
+  },
+  {
     name: "Configurações",
     href: "/configuracoes",
     icon: Settings,
@@ -55,6 +62,25 @@ const navigationItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.success && data.user) {
+          setCurrentUser(data.user);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const visibleItems = navigationItems.filter((item) => {
+    if (item.adminOnly && currentUser && currentUser.role === "seller") {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-[#E2E8F0] bg-white text-[#0B0B0D] md:flex">
@@ -86,7 +112,7 @@ export function Sidebar() {
           Menu Principal
         </div>
         <nav className="space-y-1">
-          {navigationItems.map((item) => {
+          {visibleItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
             return (
@@ -100,38 +126,36 @@ export function Sidebar() {
                     : "text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0B0B0D]"
                 )}
               >
-                <Icon className={cn("h-4 w-4", isActive ? "text-[#FF6A00]" : "text-[#64748B]")} />
-                <span>{item.name}</span>
-                {isActive && <ArrowUpRight className="ml-auto h-3.5 w-3.5 text-[#FF6A00]" />}
+                <Icon
+                  className={cn(
+                    "h-4 w-4",
+                    isActive ? "text-[#FF6A00]" : "text-[#64748B]"
+                  )}
+                />
+                {item.name}
               </Link>
             );
           })}
         </nav>
-
-        {/* Card Principal Atualizado */}
-        <div className="mt-8 mb-2.5 px-3 text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
-          Campanha Ativa
-        </div>
-        <div className="rounded-2xl border border-[#FFD0A8] bg-[#FFF7F1] p-4 text-xs">
-          <div className="flex items-center justify-between font-bold text-[#0B0B0D] mb-1.5">
-            <span>Campanha Ativa</span>
-            <span className="rounded-full bg-[#FF6A00] text-white px-2 py-0.5 text-[10px] font-bold">
-              Ativa
-            </span>
-          </div>
-          <p className="text-[11px] text-[#64748B] leading-relaxed">
-            Objetivo: Upgrade de 50 Mega para 100 Mega, troca de roteador e aplicação de NPS para geração de indicações através do programa Indique e Ganhe.
-          </p>
-        </div>
       </div>
 
-      {/* Bottom Status Atualizado: Sistema - Sincronizado */}
+      {/* Footer System Status */}
       <div className="border-t border-[#E2E8F0] p-4">
-        <div className="flex items-center gap-2.5 rounded-xl bg-[#F8FAFC] px-3.5 py-2.5 text-xs border border-[#E2E8F0]">
-          <Database className="h-4 w-4 text-[#FF6A00] animate-pulse" />
-          <div className="flex flex-col">
-            <span className="font-bold text-[#0B0B0D]">Sistema</span>
-            <span className="text-[10px] text-[#16A34A] font-semibold">Sincronizado</span>
+        <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
+              Ambiente
+            </span>
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#10B981]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#10B981] animate-pulse" />
+              Online
+            </span>
+          </div>
+          <div className="mt-2 text-xs font-bold text-[#0B0B0D]">
+            Navetech Telecom
+          </div>
+          <div className="text-[11px] text-[#64748B] truncate">
+            {currentUser?.email || "NaveProspect CRM"}
           </div>
         </div>
       </div>

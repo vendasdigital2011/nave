@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { AUTH_COOKIE_NAME } from "@/lib/auth-constants";
+import { AUTH_COOKIE_NAME, AuthUser } from "@/lib/auth-constants";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const session = request.cookies.get(AUTH_COOKIE_NAME);
+  const sessionCookie = request.cookies.get(AUTH_COOKIE_NAME);
 
   const isLoginPage = pathname === "/login";
   const isApiAuth = pathname.startsWith("/api/auth");
@@ -13,22 +13,47 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/favicon.ico") ||
     pathname.endsWith(".png") ||
     pathname.endsWith(".jpg") ||
-    pathname.endsWith(".svg");
+    pathname.endsWith(".svg") ||
+    pathname.endsWith(".webp");
 
   if (isStatic || isApiAuth) {
     return NextResponse.next();
   }
 
-  // Se o usuário não está autenticado e tenta acessar qualquer página interna
-  if (!session && !isLoginPage) {
+  // Se não houver sessão e o usuário tenta acessar rota protegida
+  if (!sessionCookie && !isLoginPage) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Se o usuário já está autenticado e tenta acessar a página de login
-  if (session && isLoginPage) {
-    const dashboardUrl = new URL("/", request.url);
-    return NextResponse.redirect(dashboardUrl);
+  // Se houver sessão
+  if (sessionCookie?.value) {
+    let user: AuthUser | null = null;
+    try {
+      user = JSON.parse(Buffer.from(sessionCookie.value, "base64").toString("utf-8"));
+    } catch {
+      // Cookie corrompido: limpar e redirecionar
+      const response = NextResponse.redirect(new URL("/login", request.url));
+      response.cookies.delete(AUTH_COOKIE_NAME);
+      return response;
+    }
+
+    // Se estiver suspenso
+    if (user && user.is_active === false && !isLoginPage) {
+      const response = NextResponse.redirect(new URL("/login?error=suspended", request.url));
+      response.cookies.delete(AUTH_COOKIE_NAME);
+      return response;
+    }
+
+    // Se estiver autenticado e tentar acessar a página de login
+    if (isLoginPage) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    // Controle de acesso de rota: Tela de Equipe / Usuários restrita a Admin e Supervisor
+    if (pathname.startsWith("/usuarios") && user?.role === "seller") {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
   }
 
   return NextResponse.next();

@@ -1,5 +1,17 @@
 export type ClientStatus = 'importados' | 'frio' | 'morno' | 'quente' | 'vendido' | 'desativado';
 
+export type UserRole = 'admin' | 'supervisor' | 'seller';
+
+export interface Profile {
+  id: string;
+  display_name: string;
+  role: UserRole;
+  is_active: boolean;
+  email?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -17,6 +29,7 @@ export interface Client {
   referral_phone?: string;
   sold_at?: string;
   operator_email?: string;
+  assigned_user_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -43,6 +56,7 @@ export interface AuditLog {
   target_client_id?: string;
   target_client_name?: string;
   details?: string;
+  actor_user_id?: string;
   timestamp: string;
 }
 

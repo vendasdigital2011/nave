@@ -1,9 +1,11 @@
 "use client";
 
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Upload, Plus, LogOut } from "lucide-react";
+import { Upload, Plus, LogOut, ShieldCheck, Shield, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AuthUser } from "@/lib/auth-constants";
 
 interface HeaderProps {
   onOpenImportModal?: () => void;
@@ -12,6 +14,18 @@ interface HeaderProps {
 
 export function Header({ onOpenImportModal, onOpenAddModal }: HeaderProps) {
   const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.success && data.user) {
+          setCurrentUser(data.user);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -20,6 +34,19 @@ export function Header({ onOpenImportModal, onOpenAddModal }: HeaderProps) {
       router.refresh();
     } catch {
       router.push("/login");
+    }
+  };
+
+  const getRoleLabel = (role?: string) => {
+    switch (role) {
+      case "admin":
+        return "Administrador";
+      case "supervisor":
+        return "Supervisor";
+      case "seller":
+        return "Vendedor";
+      default:
+        return "Operador";
     }
   };
 
@@ -71,16 +98,19 @@ export function Header({ onOpenImportModal, onOpenAddModal }: HeaderProps) {
 
         <div className="h-4 w-px bg-[#E2E8F0] mx-1" />
 
-        {/* User Info */}
+        {/* User Info with Real Identity & Role */}
         <div className="flex items-center gap-2 rounded-xl border border-[#FFD0A8] bg-[#FFF4EC] px-2.5 py-1 text-xs">
-          <img
-            src="/images/brand/logo.png"
-            alt="Navetech"
-            className="h-4 w-4 rounded-full object-contain"
-          />
-          <span className="hidden sm:inline font-bold text-[#FF6A00]">
-            Operador
-          </span>
+          <div className="h-5 w-5 rounded-full bg-[#FF6A00] text-white flex items-center justify-center font-bold text-[10px]">
+            {currentUser?.name?.substring(0, 1).toUpperCase() || "N"}
+          </div>
+          <div className="flex flex-col text-left">
+            <span className="font-bold text-[#0B0B0D] leading-none text-xs truncate max-w-[120px]">
+              {currentUser?.name || "Operador"}
+            </span>
+            <span className="text-[10px] text-[#FF6A00] font-semibold leading-tight">
+              {getRoleLabel(currentUser?.role)}
+            </span>
+          </div>
         </div>
 
         {/* Logout Button */}
