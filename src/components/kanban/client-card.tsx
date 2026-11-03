@@ -10,6 +10,7 @@ import {
   Check,
   X,
   Clock,
+  User,
 } from "lucide-react";
 import { Client } from "@/types/database";
 import { formatPhone } from "@/lib/utils";
@@ -97,6 +98,29 @@ export function ClientCard({ client, onSelectClient, isOverlay = false }: Client
       <div className="text-[11px] text-[#64748B] font-mono mt-0.5">
         {formatPhone(client.phone)}
       </div>
+
+      {/* Responsável pelo Lead */}
+      {(client as any).assigned_to ? (
+        <div className="flex items-center gap-1 text-[10px] text-slate-500 mt-1">
+          <User className="h-3 w-3 text-[#FF6A00]" />
+          <span className="font-medium truncate max-w-[130px]">
+            {(client as any).assigned_to.display_name}
+          </span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-1 text-[10px] text-amber-600 mt-1 font-medium">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
+          <span>Fila geral</span>
+        </div>
+      )}
+
+      {/* Próxima Tarefa / Retorno */}
+      {(client as any).tasks && (client as any).tasks.length > 0 && (
+        <div className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-amber-800 bg-amber-50 rounded px-1.5 py-0.5 border border-amber-200/60 truncate">
+          <Clock className="h-2.5 w-2.5 shrink-0 text-amber-600" />
+          <span className="truncate">{(client as any).tasks[0].title}</span>
+        </div>
+      )}
 
       {/* Date / Time */}
       <div className="text-[10px] text-[#94A3B8] mt-1 flex items-center gap-1 font-mono">

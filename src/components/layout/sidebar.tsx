@@ -13,6 +13,7 @@ import {
   QrCode,
   ShieldCheck,
   Layers,
+  CalendarCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AuthUser } from "@/lib/auth-constants";
@@ -22,6 +23,11 @@ const navigationItems = [
     name: "Dashboard",
     href: "/",
     icon: LayoutDashboard,
+  },
+  {
+    name: "Meu Dia",
+    href: "/meu-dia",
+    icon: CalendarCheck,
   },
   {
     name: "Campanhas",

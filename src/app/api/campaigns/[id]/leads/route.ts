@@ -50,7 +50,47 @@ export async function GET(
         .order("created_at", { ascending: false });
 
       if (!leadErr && leads && leads.length > 0) {
-        return NextResponse.json({ success: true, leads });
+        // Enriquecer com dados de perfis dos responsáveis e tarefas pendentes
+        const assignedIds = Array.from(new Set(leads.map((l: any) => l.assigned_user_id).filter(Boolean)));
+        const profileMap: Record<string, any> = {};
+        if (assignedIds.length > 0) {
+          try {
+            const { data: profiles } = await supabase
+              .from("profiles")
+              .select("id, display_name, role")
+              .in("id", assignedIds);
+            (profiles || []).forEach((p: any) => { profileMap[p.id] = p; });
+          } catch {
+            // Ignora se tabela profiles não responder
+          }
+        }
+
+        const leadIds = leads.map((l: any) => l.id);
+        const taskMap: Record<string, any[]> = {};
+        if (leadIds.length > 0) {
+          try {
+            const { data: tasks } = await supabase
+              .from("lead_tasks")
+              .select("id, campaign_lead_id, type, title, due_at, status")
+              .in("campaign_lead_id", leadIds)
+              .eq("status", "pending")
+              .order("due_at", { ascending: true });
+            (tasks || []).forEach((t: any) => {
+              if (!taskMap[t.campaign_lead_id]) taskMap[t.campaign_lead_id] = [];
+              taskMap[t.campaign_lead_id].push(t);
+            });
+          } catch {
+            // Ignora se tabela lead_tasks ainda não responder
+          }
+        }
+
+        const enrichedLeads = leads.map((l: any) => ({
+          ...l,
+          assigned_to: l.assigned_user_id ? profileMap[l.assigned_user_id] : null,
+          tasks: taskMap[l.id] || [],
+        }));
+
+        return NextResponse.json({ success: true, leads: enrichedLeads });
       }
     } catch (err) {
       // Ignora erro se tabela campaign_leads ainda não existir e ativa fallback

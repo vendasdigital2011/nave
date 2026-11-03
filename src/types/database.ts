@@ -6,6 +6,10 @@ export type CampaignStatus = 'active' | 'paused' | 'archived';
 
 export type StageKind = 'open' | 'won' | 'lost';
 
+export type TaskStatus = 'pending' | 'completed' | 'cancelled';
+
+export type TaskType = 'call' | 'whatsapp' | 'followup' | 'visit' | 'other';
+
 export interface Profile {
   id: string;
   display_name: string;
@@ -62,6 +66,33 @@ export interface CampaignLead {
   updated_at: string;
 }
 
+export interface LeadTask {
+  id: string;
+  campaign_lead_id: string;
+  assigned_user_id?: string;
+  created_by?: string;
+  type: TaskType;
+  title: string;
+  description?: string;
+  due_at: string;
+  status: TaskStatus;
+  completed_at?: string;
+  created_at: string;
+  updated_at: string;
+  assigned_user?: Profile;
+  lead?: CampaignLead & { client: Client };
+}
+
+export interface LeadTransfer {
+  id: string;
+  campaign_lead_id: string;
+  from_user_id?: string;
+  to_user_id?: string;
+  transferred_by?: string;
+  reason?: string;
+  created_at: string;
+}
+
 export interface ImportBatch {
   id: string;
   campaign_id: string;
@@ -99,6 +130,7 @@ export interface ImportBatchRow {
 export interface KanbanLeadCard extends CampaignLead {
   client: Client;
   assigned_to?: Profile;
+  tasks?: LeadTask[];
 }
 
 export interface Client {
