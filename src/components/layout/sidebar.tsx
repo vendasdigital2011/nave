@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Layers,
   CalendarCheck,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AuthUser } from "@/lib/auth-constants";
@@ -48,6 +49,11 @@ const navigationItems = [
     name: "Conversas",
     href: "/conversas",
     icon: MessageSquare,
+  },
+  {
+    name: "Relatórios & Métricas",
+    href: "/metricas",
+    icon: BarChart3,
   },
   {
     name: "Meu WhatsApp",
