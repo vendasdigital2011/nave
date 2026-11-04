@@ -176,6 +176,7 @@ function KanbanContent() {
         open={isAddClientOpen}
         onOpenChange={setIsAddClientOpen}
         onClientAdded={handleDataRefresh}
+        campaignId={selectedCampaignId}
       />
     </div>
   );

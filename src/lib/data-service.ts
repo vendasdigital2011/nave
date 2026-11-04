@@ -198,6 +198,53 @@ export class DataService {
       throw error;
     }
 
+    // Garantir vínculo com campaign_leads e conversations
+    try {
+      const defaultCampId = "c0000000-0000-0000-0000-000000000001";
+      const stageMap: Record<string, string> = {
+        importados: "10000000-0000-0000-0000-000000000001",
+        frio: "10000000-0000-0000-0000-000000000002",
+        morno: "10000000-0000-0000-0000-000000000003",
+        quente: "10000000-0000-0000-0000-000000000004",
+        vendido: "10000000-0000-0000-0000-000000000005",
+        desativado: "10000000-0000-0000-0000-000000000006",
+      };
+      const stageId = stageMap[newClient.status] || "10000000-0000-0000-0000-000000000001";
+
+      const { data: lead } = await supabase
+        .from("campaign_leads")
+        .insert({
+          campaign_id: defaultCampId,
+          client_id: newClient.id,
+          stage_id: stageId,
+          notes: newClient.notes,
+          version: 1,
+          created_at: now,
+          updated_at: now,
+        })
+        .select("id")
+        .maybeSingle();
+
+      const defaultInstanceId = "6c98699d-3684-4a35-a47f-8dfcaa950476";
+      await supabase
+        .from("conversations")
+        .insert({
+          instance_id: defaultInstanceId,
+          contact_client_id: newClient.id,
+          campaign_lead_id: lead?.id || null,
+          contact_phone: newClient.phone,
+          contact_name: newClient.name,
+          status: "waiting_user",
+          unread_count: 0,
+          last_message_text: "Lead adicionado manualmente",
+          last_message_at: now,
+          created_at: now,
+          updated_at: now,
+        });
+    } catch {
+      // Ignora erro secundário para não travar inserção principal
+    }
+
     await this.addAuditLog({
       operator_email: operatorEmail,
       action: `Cadastrou novo cliente`,

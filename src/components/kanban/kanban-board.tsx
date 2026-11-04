@@ -580,6 +580,8 @@ export function KanbanBoard({ campaignId = "c0000000-0000-0000-0000-000000000001
         onOpenChange={setIsAddClientOpen}
         onClientAdded={loadData}
         defaultStatus={targetColumnStatus}
+        campaignId={campaignId}
+        stageId={targetColumnStatus}
       />
     </div>
   );

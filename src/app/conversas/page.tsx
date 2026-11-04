@@ -186,7 +186,30 @@ function ConversasContent() {
             const found = (json.conversations || []).find(
               (c: Conversation) => c.contact_client_id === targetClientId
             );
-            if (found) setSelectedConversation(found);
+            if (found) {
+              setSelectedConversation(found);
+            } else {
+              // Provisionar ou recuperar conversa via API caso ainda não listada
+              try {
+                const provRes = await fetch("/api/conversations", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ client_id: targetClientId }),
+                });
+                if (provRes.ok) {
+                  const provData = await provRes.json();
+                  if (provData.success && provData.conversation) {
+                    setConversations((prev) => {
+                      const exists = prev.some((c) => c.id === provData.conversation.id);
+                      return exists ? prev : [provData.conversation, ...prev];
+                    });
+                    setSelectedConversation(provData.conversation);
+                  }
+                }
+              } catch (e) {
+                console.error("Falha ao provisionar conversa:", e);
+              }
+            }
           }
         }
       }

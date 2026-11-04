@@ -19,7 +19,9 @@ interface AddClientModalProps {
   onOpenChange: (open: boolean) => void;
   onClientAdded?: () => void;
   onSuccess?: () => void;
-  defaultStatus?: ClientStatus;
+  defaultStatus?: ClientStatus | string;
+  campaignId?: string;
+  stageId?: string;
 }
 
 export function AddClientModal({
@@ -28,18 +30,22 @@ export function AddClientModal({
   onClientAdded,
   onSuccess,
   defaultStatus = "importados",
+  campaignId = "c0000000-0000-0000-0000-000000000001",
+  stageId,
 }: AddClientModalProps) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [currentPlan, setCurrentPlan] = useState("50 Mega");
   const [targetPlan, setTargetPlan] = useState("100 Mega");
-  const [status, setStatus] = useState<ClientStatus>(defaultStatus);
+  const [status, setStatus] = useState<any>(defaultStatus);
   const [notes, setNotes] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
       setStatus(defaultStatus);
+      setErrorMsg("");
     }
   }, [open, defaultStatus]);
 
@@ -48,17 +54,28 @@ export function AddClientModal({
     if (!name || !phone) return;
 
     setIsSubmitting(true);
+    setErrorMsg("");
     try {
-      await DataService.addClient({
-        name: name.trim(),
-        phone: phone.trim(),
-        current_plan: currentPlan,
-        target_plan: targetPlan,
-        status,
-        notes: notes.trim() || undefined,
-        wants_upgrade: false,
-        gave_referral: false,
+      const campId = campaignId || "c0000000-0000-0000-0000-000000000001";
+      const res = await fetch(`/api/campaigns/${campId}/leads`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          phone: phone.trim(),
+          current_plan: currentPlan,
+          target_plan: targetPlan,
+          stage_id: stageId || defaultStatus,
+          status: typeof status === "string" ? status : "importados",
+          notes: notes.trim() || undefined,
+        }),
       });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Erro ao salvar cliente/lead.");
+      }
 
       setName("");
       setPhone("");
@@ -66,8 +83,9 @@ export function AddClientModal({
       onClientAdded?.();
       onSuccess?.();
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao adicionar cliente:", error);
+      setErrorMsg(error.message || "Erro inesperado ao salvar cliente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -81,6 +99,12 @@ export function AddClientModal({
             Cadastrar Novo Cliente
           </DialogTitle>
         </DialogHeader>
+
+        {errorMsg && (
+          <div className="mt-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+            {errorMsg}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-3.5 py-3 text-xs">
           <div className="space-y-1">

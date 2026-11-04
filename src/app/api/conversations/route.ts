@@ -132,3 +132,156 @@ export async function GET(request: Request) {
     );
   }
 }
+
+// POST /api/conversations - Obter ou criar conversa para um cliente (auto-provisionamento)
+export async function POST(request: Request) {
+  try {
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const { client_id, campaign_id } = body;
+
+    if (!client_id) {
+      return NextResponse.json({ error: "client_id é obrigatório." }, { status: 400 });
+    }
+
+    const supabase = createServiceClient();
+    const now = new Date().toISOString();
+
+    // 1. Verificar se conversa já existe
+    const { data: existingConvs } = await supabase
+      .from("conversations")
+      .select(`
+        *,
+        client:clients(*),
+        campaign_lead:campaign_leads(
+          id,
+          campaign_id,
+          stage_id,
+          assigned_user_id,
+          stage:campaign_stages(id, name, color, stage_kind),
+          campaign:campaigns(id, name, type)
+        )
+      `)
+      .eq("contact_client_id", client_id)
+      .limit(1);
+
+    if (existingConvs && existingConvs.length > 0) {
+      return NextResponse.json({ success: true, conversation: existingConvs[0] });
+    }
+
+    // 2. Buscar dados do cliente
+    const { data: client, error: clientErr } = await supabase
+      .from("clients")
+      .select("*")
+      .eq("id", client_id)
+      .maybeSingle();
+
+    if (!client || clientErr) {
+      return NextResponse.json({ error: "Cliente não encontrado." }, { status: 404 });
+    }
+
+    // 3. Buscar lead correspondente
+    let leadQuery = supabase
+      .from("campaign_leads")
+      .select("id, campaign_id, assigned_user_id")
+      .eq("client_id", client_id);
+    if (campaign_id) {
+      leadQuery = leadQuery.eq("campaign_id", campaign_id);
+    }
+    const { data: lead } = await leadQuery.limit(1).maybeSingle();
+
+    // 4. Obter instância padrão
+    const { data: defaultInst } = await supabase
+      .from("whatsapp_instances")
+      .select("id")
+      .eq("is_default", true)
+      .limit(1)
+      .maybeSingle();
+
+    const instanceId = defaultInst?.id || "6c98699d-3684-4a35-a47f-8dfcaa950476";
+
+    // 5. Verificar se já existe conversa para esta instância e telefone
+    const { data: existingPhoneConv } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("instance_id", instanceId)
+      .eq("contact_phone", client.phone)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingPhoneConv) {
+      const { data: updConv } = await supabase
+        .from("conversations")
+        .update({
+          contact_client_id: client.id,
+          campaign_lead_id: lead?.id || null,
+          contact_name: client.name,
+          updated_at: now,
+        })
+        .eq("id", existingPhoneConv.id)
+        .select(`
+          *,
+          client:clients(*),
+          campaign_lead:campaign_leads(
+            id,
+            campaign_id,
+            stage_id,
+            assigned_user_id,
+            stage:campaign_stages(id, name, color, stage_kind),
+            campaign:campaigns(id, name, type)
+          )
+        `)
+        .single();
+
+      return NextResponse.json({ success: true, conversation: updConv || existingPhoneConv });
+    }
+
+    // 6. Inserir conversa
+    const { data: newConv, error: convErr } = await supabase
+      .from("conversations")
+      .insert([
+        {
+          instance_id: instanceId,
+          contact_client_id: client.id,
+          campaign_lead_id: lead?.id || null,
+          assigned_user_id: lead?.assigned_user_id || (user.role === "seller" ? user.id : null),
+          contact_phone: client.phone,
+          contact_name: client.name,
+          status: "waiting_user",
+          unread_count: 0,
+          last_message_text: "Atendimento iniciado",
+          last_message_at: now,
+          created_at: now,
+          updated_at: now,
+        },
+      ])
+      .select(`
+        *,
+        client:clients(*),
+        campaign_lead:campaign_leads(
+          id,
+          campaign_id,
+          stage_id,
+          assigned_user_id,
+          stage:campaign_stages(id, name, color, stage_kind),
+          campaign:campaigns(id, name, type)
+        )
+      `)
+      .single();
+
+    if (convErr || !newConv) {
+      return NextResponse.json(
+        { error: "Erro ao provisionar conversa: " + convErr?.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true, conversation: newConv });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || "Erro interno." }, { status: 500 });
+  }
+}
