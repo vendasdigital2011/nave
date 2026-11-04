@@ -1,13 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { AUTH_COOKIE_NAME, AuthUser } from "@/lib/auth-constants";
 import { createClient } from "@/lib/supabase/server";
 
-// GET /api/ai/config - Obter status de configuração da IA (Gemini ou OpenAI)
-export async function GET() {
+async function getAuthenticatedUser(): Promise<AuthUser | null> {
+  // 1. Cookie oficial de sessão da aplicação
+  try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get(AUTH_COOKIE_NAME);
+    if (sessionCookie?.value) {
+      const parsed = JSON.parse(Buffer.from(sessionCookie.value, "base64").toString("utf-8"));
+      if (parsed) return parsed;
+    }
+  } catch {}
+
+  // 2. Fallback para Supabase Auth nativo
   try {
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    if (user) {
+      return {
+        id: user.id,
+        email: user.email || "",
+        name: user.user_metadata?.full_name || user.email || "Usuário",
+        role: "admin",
+      };
+    }
+  } catch {}
+
+  return null;
+}
+
+// GET /api/ai/config - Obter status de configuração da IA (Gemini ou OpenAI)
+export async function GET() {
+  try {
+    const user = await getAuthenticatedUser();
 
     if (!user) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });

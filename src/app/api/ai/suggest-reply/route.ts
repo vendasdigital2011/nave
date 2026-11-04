@@ -1,17 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
+import { AUTH_COOKIE_NAME, AuthUser } from "@/lib/auth-constants";
+import { createServiceClient, createClient } from "@/lib/supabase/server";
 
-export async function POST(request: NextRequest) {
+async function getAuthenticatedUser(): Promise<AuthUser | null> {
+  // 1. Cookie oficial de sessão da aplicação
+  try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get(AUTH_COOKIE_NAME);
+    if (sessionCookie?.value) {
+      const parsed = JSON.parse(Buffer.from(sessionCookie.value, "base64").toString("utf-8"));
+      if (parsed) return parsed;
+    }
+  } catch {}
+
+  // 2. Fallback para Supabase Auth nativo
   try {
     const supabase = await createClient();
     const {
       data: { user },
-      error: authError,
     } = await supabase.auth.getUser();
+    if (user) {
+      return {
+        id: user.id,
+        email: user.email || "",
+        name: user.user_metadata?.full_name || user.email || "Usuário",
+        role: "admin",
+      };
+    }
+  } catch {}
 
-    if (authError || !user) {
+  return null;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const user = await getAuthenticatedUser();
+
+    if (!user) {
       return NextResponse.json(
-        { error: "Não autorizado", code: "UNAUTHORIZED" },
+        { error: "Não autorizado. Faça login novamente.", code: "UNAUTHORIZED" },
         { status: 401 }
       );
     }
@@ -26,12 +54,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const supabase = createServiceClient();
+
     // 1. Obter perfil do usuário para checagem RBAC
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id, role, full_name")
-      .eq("id", user.id)
-      .single();
+    let userRole = user.role || "seller";
+    if (user.id) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, role, full_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (profile?.role) userRole = profile.role;
+    }
 
     // 2. Buscar conversa com contexto do lead, cliente e campanha
     const { data: conversation, error: convError } = await supabase
@@ -73,7 +107,7 @@ export async function POST(request: NextRequest) {
     const clientData = Array.isArray(rawConv.client) ? rawConv.client[0] : rawConv.client;
 
     // RBAC: Se for seller, verificar se a conversa está atribuída a ele ou lead correspondente
-    if (profile?.role === "seller") {
+    if (userRole === "seller" && user.id) {
       const isAssignedConv = rawConv.assigned_user_id === user.id;
       const isAssignedLead = campaignLead?.assigned_user_id === user.id;
       const isUnassigned = !rawConv.assigned_user_id && !campaignLead?.assigned_user_id;
@@ -256,20 +290,22 @@ Analise a conversa e gere a resposta JSON estruturada.`;
     }
 
     // 5. Registrar evento de auditoria em conversation_events
-    await supabase.from("conversation_events").insert({
-      conversation_id: conversation_id,
-      actor_user_id: user.id,
-      event_type: "ai_suggestion",
-      before_state: {
-        provider: usedProvider,
-        messages_count: messages.length,
-      },
-      after_state: {
-        interest_level: aiResult.interest_level,
-        objections_count: aiResult.objections.length,
-        timestamp: new Date().toISOString(),
-      },
-    });
+    if (user.id) {
+      await supabase.from("conversation_events").insert({
+        conversation_id: conversation_id,
+        actor_user_id: user.id,
+        event_type: "ai_suggestion",
+        before_state: {
+          provider: usedProvider,
+          messages_count: messages.length,
+        },
+        after_state: {
+          interest_level: aiResult.interest_level,
+          objections_count: aiResult.objections.length,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,
