@@ -110,6 +110,70 @@ export interface WhatsAppInstance {
   owner?: Profile;
 }
 
+export type ConversationStatus = 'unread' | 'waiting_user' | 'waiting_client' | 'pending' | 'triagem' | 'closed';
+export type MessageDirection = 'inbound' | 'outbound';
+export type MessageDeliveryStatus = 'sent' | 'delivered' | 'read' | 'failed';
+
+export interface Conversation {
+  id: string;
+  instance_id?: string;
+  contact_client_id?: string;
+  campaign_lead_id?: string;
+  assigned_user_id?: string;
+  contact_phone: string;
+  contact_name?: string;
+  status: ConversationStatus;
+  unread_count: number;
+  last_message_text?: string;
+  last_message_at: string;
+  created_at: string;
+  updated_at: string;
+  client?: Client;
+  campaign_lead?: CampaignLead & { stage?: CampaignStage; campaign?: Campaign };
+  assigned_user?: Profile;
+  instance?: WhatsAppInstance;
+}
+
+export interface DbMessage {
+  id: string;
+  conversation_id: string;
+  provider_message_id?: string;
+  direction: MessageDirection;
+  sender_ref?: string;
+  body: string;
+  content_type: string;
+  provider_timestamp?: string;
+  received_at: string;
+  delivery_status: MessageDeliveryStatus;
+  created_by_user_id?: string;
+  metadata?: Record<string, any>;
+  created_at: string;
+  created_by_user?: Profile;
+}
+
+export interface ConversationEvent {
+  id: string;
+  conversation_id: string;
+  actor_user_id?: string;
+  event_type: string;
+  before_state?: Record<string, any>;
+  after_state?: Record<string, any>;
+  occurred_at: string;
+  actor?: Profile;
+}
+
+export interface ConversationNote {
+  id: string;
+  conversation_id: string;
+  author_user_id?: string;
+  commercial_classification?: string;
+  objection?: string;
+  content: string;
+  next_followup_at?: string;
+  created_at: string;
+  author?: Profile;
+}
+
 export interface ImportBatch {
   id: string;
   campaign_id: string;
