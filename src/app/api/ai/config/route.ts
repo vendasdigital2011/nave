@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-// GET /api/ai/config - Obter status de configuração da IA (sem vazar a chave secreta)
+// GET /api/ai/config - Obter status de configuração da IA (Gemini ou OpenAI)
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -13,23 +13,37 @@ export async function GET() {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
-    const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+    const geminiKey = process.env.GEMINI_API_KEY;
+    const openAiKey = process.env.OPENAI_API_KEY;
 
+    let activeProvider = "heuristic";
+    let activeModel = "regras-internas";
     let maskedKey = null;
-    if (apiKey && apiKey.length > 8) {
-      maskedKey = apiKey.slice(0, 7) + "..." + apiKey.slice(-4);
+
+    if (geminiKey) {
+      activeProvider = "gemini";
+      activeModel = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+      maskedKey = geminiKey.slice(0, 6) + "..." + geminiKey.slice(-4);
+    } else if (openAiKey) {
+      activeProvider = "openai";
+      activeModel = process.env.OPENAI_MODEL || "gpt-4o-mini";
+      maskedKey = openAiKey.slice(0, 6) + "..." + openAiKey.slice(-4);
     }
 
     return NextResponse.json({
       success: true,
-      configured: !!apiKey,
-      provider: apiKey ? "openai" : "heuristic",
-      model,
+      configured: !!(geminiKey || openAiKey),
+      provider: activeProvider,
+      model: activeModel,
       maskedKey,
-      description: apiKey
-        ? "Provedor OpenAI ativo com análise semântica generativa."
-        : "Modo Heurístico ativo (análise comercial interna com base nas regras da Navetech).",
+      geminiConfigured: !!geminiKey,
+      openAiConfigured: !!openAiKey,
+      description:
+        activeProvider === "gemini"
+          ? `Provedor Google Gemini ativo (${activeModel}) via Google AI Studio.`
+          : activeProvider === "openai"
+          ? `Provedor OpenAI ativo (${activeModel}).`
+          : "Modo Heurístico ativo (análise comercial com base nas regras oficiais da Navetech Telecom).",
     });
   } catch (err: any) {
     return NextResponse.json(

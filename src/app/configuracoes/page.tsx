@@ -42,18 +42,22 @@ export default function ConfiguracoesPage() {
   const [evolutionMessage, setEvolutionMessage] = useState<string | null>(null);
 
   // AI Copilot Configuration State
+  const [selectedAiProvider, setSelectedAiProvider] = useState<"gemini" | "openai">("gemini");
   const [aiConfig, setAiConfig] = useState<{
     configured: boolean;
     provider: string;
     model: string;
     maskedKey: string | null;
     description: string;
+    geminiConfigured?: boolean;
+    openAiConfigured?: boolean;
   } | null>(null);
   const [aiApiKeyInput, setAiApiKeyInput] = useState("");
-  const [aiModelInput, setAiModelInput] = useState("gpt-4o-mini");
+  const [aiModelInput, setAiModelInput] = useState("gemini-1.5-flash");
   const [isTestingAi, setIsTestingAi] = useState(false);
   const [aiTestResult, setAiTestResult] = useState<{
     success: boolean;
+    provider?: string;
     message?: string;
     error?: string;
     latencyMs?: number;
@@ -65,7 +69,13 @@ export default function ConfiguracoesPage() {
       .then((d) => {
         if (d && d.success) {
           setAiConfig(d);
-          if (d.model) setAiModelInput(d.model);
+          if (d.provider === "gemini") {
+            setSelectedAiProvider("gemini");
+            setAiModelInput(d.model || "gemini-1.5-flash");
+          } else if (d.provider === "openai") {
+            setSelectedAiProvider("openai");
+            setAiModelInput(d.model || "gpt-4o-mini");
+          }
         }
       })
       .catch(() => {});
@@ -87,6 +97,7 @@ export default function ConfiguracoesPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          provider: selectedAiProvider,
           apiKey: aiApiKeyInput || undefined,
           model: aiModelInput,
         }),
@@ -234,14 +245,14 @@ export default function ConfiguracoesPage() {
           </CardContent>
         </Card>
 
-        {/* 2. Parâmetros do Copiloto de IA (OpenAI / LLM) */}
+        {/* 2. Parâmetros do Copiloto de IA (Google Gemini & OpenAI) */}
         <Card className="bg-white border-[#E2E8F0] shadow-sm">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-sm font-bold text-[#0B0B0D] flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-[#FF6A00]" />
-                  Copiloto de IA & Provedor LLM (OpenAI)
+                  Copiloto de IA & Provedor LLM (Google Gemini / OpenAI)
                 </CardTitle>
                 <CardDescription className="text-xs text-[#64748B] mt-0.5">
                   Motor de análise conversacional e sugestão de respostas comerciais (envio 100% humano).
@@ -273,7 +284,11 @@ export default function ConfiguracoesPage() {
                 <div className={`h-2.5 w-2.5 rounded-full ${aiConfig?.configured ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
                 <div>
                   <div className="font-bold text-[#0B0B0D]">
-                    {aiConfig?.configured ? "Provedor OpenAI Ativo" : "Modo Heurístico Ativo (Regras Internas Navetech)"}
+                    {aiConfig?.provider === "gemini"
+                      ? "Provedor Google Gemini Ativo"
+                      : aiConfig?.provider === "openai"
+                      ? "Provedor OpenAI Ativo"
+                      : "Modo Heurístico Ativo (Regras Internas Navetech)"}
                   </div>
                   <div className="text-[11px] text-[#64748B]">
                     {aiConfig?.description || "Verificando configuração de inteligência artificial..."}
@@ -283,9 +298,47 @@ export default function ConfiguracoesPage() {
 
               {aiConfig?.maskedKey && (
                 <div className="font-mono text-[11px] bg-white px-2.5 py-1 rounded-md border border-slate-200 text-slate-700">
-                  Chave: {aiConfig.maskedKey}
+                  Chave: {aiConfig.maskedKey} ({aiConfig.provider?.toUpperCase()})
                 </div>
               )}
+            </div>
+
+            {/* Alternador de Provedor */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#0B0B0D]">Selecione o Provedor de IA:</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedAiProvider("gemini");
+                    setAiModelInput("gemini-1.5-flash");
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                    selectedAiProvider === "gemini"
+                      ? "bg-blue-50 border-blue-400 text-blue-900 shadow-xs"
+                      : "bg-[#F8FAFC] border-[#E2E8F0] text-slate-600 hover:border-slate-300"
+                  }`}
+                >
+                  <Sparkles className="h-4 w-4 text-blue-600" />
+                  Google Gemini (Recomendado - Gratuito no AI Studio)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedAiProvider("openai");
+                    setAiModelInput("gpt-4o-mini");
+                  }}
+                  className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                    selectedAiProvider === "openai"
+                      ? "bg-emerald-50 border-emerald-400 text-emerald-900 shadow-xs"
+                      : "bg-[#F8FAFC] border-[#E2E8F0] text-slate-600 hover:border-slate-300"
+                  }`}
+                >
+                  <Bot className="h-4 w-4 text-emerald-600" />
+                  OpenAI (ChatGPT API)
+                </button>
+              </div>
             </div>
 
             {/* Resultado do Teste */}
@@ -304,7 +357,7 @@ export default function ConfiguracoesPage() {
                     <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
                   )}
                   <span>
-                    {aiTestResult.success ? aiTestResult.message : "Falha no teste da OpenAI:"}
+                    {aiTestResult.success ? aiTestResult.message : "Falha na comunicação com a IA:"}
                   </span>
                   {aiTestResult.latencyMs && (
                     <span className="text-[10px] font-mono opacity-80">
@@ -321,31 +374,57 @@ export default function ConfiguracoesPage() {
             {/* Inputs de Configuração */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2 space-y-1">
-                <label className="text-xs font-bold text-[#0B0B0D] flex items-center justify-between">
-                  <span>Chave de API OpenAI (OPENAI_API_KEY)</span>
-                  <span className="text-[10px] text-[#64748B] font-normal">
-                    {aiConfig?.configured ? "Configurada no servidor" : "Opcional para teste"}
-                  </span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-[#0B0B0D]">
+                    {selectedAiProvider === "gemini"
+                      ? "Chave de API Gemini (GEMINI_API_KEY)"
+                      : "Chave de API OpenAI (OPENAI_API_KEY)"}
+                  </label>
+                  {selectedAiProvider === "gemini" && (
+                    <a
+                      href="https://aistudio.google.com/app/apikey"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-blue-600 hover:underline flex items-center gap-1 font-semibold"
+                    >
+                      Gerar chave no Google AI Studio
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
                 <Input
                   type="password"
                   value={aiApiKeyInput}
                   onChange={(e) => setAiApiKeyInput(e.target.value)}
-                  placeholder={aiConfig?.configured ? "Chave já cadastrada no servidor" : "sk-proj-..."}
+                  placeholder={
+                    selectedAiProvider === "gemini"
+                      ? (aiConfig?.geminiConfigured ? "Chave Gemini já configurada no servidor" : "AIzaSy...")
+                      : (aiConfig?.openAiConfigured ? "Chave OpenAI já configurada no servidor" : "sk-proj-...")
+                  }
                   className="text-xs h-9 bg-[#F8FAFC] border-[#E2E8F0] font-mono"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-[#0B0B0D]">Modelo LLM</label>
+                <label className="text-xs font-bold text-[#0B0B0D]">Modelo</label>
                 <select
                   value={aiModelInput}
                   onChange={(e) => setAiModelInput(e.target.value)}
                   className="w-full h-9 px-3 text-xs border border-[#E2E8F0] rounded-lg bg-[#F8FAFC] text-[#0B0B0D] focus:outline-[#FF6A00]"
                 >
-                  <option value="gpt-4o-mini">gpt-4o-mini (Recomendado)</option>
-                  <option value="gpt-4o">gpt-4o (Alta precisão)</option>
-                  <option value="gpt-3.5-turbo">gpt-3.5-turbo (Legado)</option>
+                  {selectedAiProvider === "gemini" ? (
+                    <>
+                      <option value="gemini-1.5-flash">gemini-1.5-flash (Recomendado - Gratuito e Rápido)</option>
+                      <option value="gemini-2.0-flash">gemini-2.0-flash (Mais Recente)</option>
+                      <option value="gemini-1.5-pro">gemini-1.5-pro (Raciocínio Avançado)</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="gpt-4o-mini">gpt-4o-mini (Recomendado)</option>
+                      <option value="gpt-4o">gpt-4o (Alta Precisão)</option>
+                      <option value="gpt-3.5-turbo">gpt-3.5-turbo (Legado)</option>
+                    </>
+                  )}
                 </select>
               </div>
             </div>
@@ -354,23 +433,38 @@ export default function ConfiguracoesPage() {
             <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3.5 text-xs text-blue-900 space-y-2">
               <div className="font-bold flex items-center gap-1.5 text-blue-950">
                 <Key className="h-3.5 w-3.5 text-blue-600" />
-                Como inserir sua chave da OpenAI em Produção:
+                Como ativar o {selectedAiProvider === "gemini" ? "Google Gemini" : "OpenAI"} em Produção na Vercel:
               </div>
               <ol className="list-decimal pl-4 space-y-1 text-[11px] text-blue-800">
                 <li>
-                  Acesse o dashboard da Vercel no projeto <strong>nave</strong>.
+                  Acesse o painel da Vercel:{" "}
+                  <a
+                    href="https://vercel.com/vendasdigital2011-5220s-projects/nave/settings/environment-variables"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold underline text-blue-700"
+                  >
+                    Vercel Project Settings &gt; Environment Variables
+                  </a>
                 </li>
                 <li>
-                  Vá em <strong>Settings &gt; Environment Variables</strong>.
+                  Adicione a variável de ambiente:
+                  <ul className="list-disc pl-4 mt-1 font-mono text-[10px] space-y-0.5 text-blue-900">
+                    {selectedAiProvider === "gemini" ? (
+                      <>
+                        <li><strong>Nome:</strong> GEMINI_API_KEY</li>
+                        <li><strong>Valor:</strong> sua chave do Google AI Studio (iniciada em AIzaSy...)</li>
+                      </>
+                    ) : (
+                      <>
+                        <li><strong>Nome:</strong> OPENAI_API_KEY</li>
+                        <li><strong>Valor:</strong> sua chave da OpenAI (iniciada em sk-...)</li>
+                      </>
+                    )}
+                  </ul>
                 </li>
                 <li>
-                  Adicione a chave com o nome <strong>OPENAI_API_KEY</strong> e cole o token da OpenAI (iniciado em <code>sk-...</code>).
-                </li>
-                <li>
-                  Opcional: adicione <strong>OPENAI_MODEL</strong> com valor <code>gpt-4o-mini</code>.
-                </li>
-                <li>
-                  Pronto! Ao salvar, o Copiloto IA no atendimento responderá com a OpenAI em tempo real.
+                  Clique em <strong>Save</strong>. O Copiloto IA no atendimento passa a responder imediatamente via {selectedAiProvider === "gemini" ? "Google Gemini" : "OpenAI"}!
                 </li>
               </ol>
             </div>
