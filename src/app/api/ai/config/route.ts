@@ -51,7 +51,7 @@ export async function GET() {
 
     if (geminiKey) {
       activeProvider = "gemini";
-      activeModel = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+      activeModel = process.env.GEMINI_MODEL || "gemini-3.5-flash";
       maskedKey = geminiKey.slice(0, 6) + "..." + geminiKey.slice(-4);
     } else if (openAiKey) {
       activeProvider = "openai";

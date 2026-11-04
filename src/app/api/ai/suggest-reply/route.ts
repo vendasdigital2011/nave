@@ -200,41 +200,71 @@ Analise a conversa e gere a resposta JSON estruturada.`;
       // 4A. Provedor 1: Google Gemini (se GEMINI_API_KEY estiver configurada)
       if (geminiKey) {
         try {
-          const model = process.env.GEMINI_MODEL || "gemini-1.5-flash";
-          const geminiRes = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
-                generationConfig: {
-                  responseMimeType: "application/json",
-                  temperature: 0.3,
-                },
-              }),
-            }
-          );
+          const preferredModel = process.env.GEMINI_MODEL || "gemini-3.5-flash";
+          const candidateModels = [
+            preferredModel,
+            "gemini-3.5-flash",
+            "gemini-3.8-flash",
+            "gemini-2.5-flash",
+            "gemini-1.5-flash",
+          ];
+          const uniqueModels = Array.from(new Set(candidateModels));
 
-          if (!geminiRes.ok) {
-            throw new Error(`Google Gemini API error: ${geminiRes.status}`);
+          let parsed: any = null;
+          let successfulModel = preferredModel;
+          let lastError: any = null;
+
+          for (const model of uniqueModels) {
+            try {
+              const geminiRes = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+                    generationConfig: {
+                      responseMimeType: "application/json",
+                      temperature: 0.3,
+                    },
+                  }),
+                }
+              );
+
+              if (geminiRes.ok) {
+                const geminiData = await geminiRes.json();
+                const contentStr = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (contentStr) {
+                  parsed = JSON.parse(contentStr);
+                  successfulModel = model;
+                  break;
+                }
+              } else {
+                const errData = await geminiRes.json().catch(() => ({}));
+                lastError = new Error(
+                  `Gemini ${model} HTTP ${geminiRes.status}: ${errData.error?.message || ""}`
+                );
+              }
+            } catch (innerErr) {
+              lastError = innerErr;
+            }
           }
 
-          const geminiData = await geminiRes.json();
-          const contentStr = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-          const parsed = JSON.parse(contentStr);
-
-          aiResult = {
-            summary: parsed.summary || "Resumo da conversa disponível.",
-            interest_level: ["Alto", "Médio", "Baixo", "Indefinido"].includes(parsed.interest_level)
-              ? parsed.interest_level
-              : "Médio",
-            objections: Array.isArray(parsed.objections) ? parsed.objections : [],
-            suggested_next_step: parsed.suggested_next_step || "Continuar o atendimento.",
-            suggested_reply: parsed.suggested_reply || "Olá, tudo bem? Como posso ajudar?",
-            caveats: parsed.caveats || `Sugestão gerada via Google Gemini (${model}).`,
-          };
-          usedProvider = "gemini";
+          if (parsed) {
+            aiResult = {
+              summary: parsed.summary || "Resumo da conversa disponível.",
+              interest_level: ["Alto", "Médio", "Baixo", "Indefinido"].includes(parsed.interest_level)
+                ? parsed.interest_level
+                : "Médio",
+              objections: Array.isArray(parsed.objections) ? parsed.objections : [],
+              suggested_next_step: parsed.suggested_next_step || "Continuar o atendimento.",
+              suggested_reply: parsed.suggested_reply || "Olá, tudo bem? Como posso ajudar?",
+              caveats: parsed.caveats || `Sugestão gerada via Google Gemini (${successfulModel}).`,
+            };
+            usedProvider = "gemini";
+          } else {
+            throw lastError || new Error("Nenhum modelo Gemini respondeu com sucesso.");
+          }
         } catch (err: any) {
           console.error("Falha ao consultar Google Gemini, tentando fallback:", err.message);
           aiResult = generateHeuristicAnalysis(clientName, clientPlan, messages);

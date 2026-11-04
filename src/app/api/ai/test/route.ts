@@ -60,40 +60,68 @@ export async function POST(request: NextRequest) {
     const startTime = Date.now();
 
     // 1. Teste para Google Gemini
-    if (provider === "gemini" || keyToTest.startsWith("AIzaSy")) {
-      const model = body.model?.trim() || process.env.GEMINI_MODEL || "gemini-1.5-flash";
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${keyToTest}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: "Diga apenas: 'OK Navetech Telecom'." }] }],
-            generationConfig: { maxOutputTokens: 10, temperature: 0 },
-          }),
+    if (provider === "gemini" || keyToTest.startsWith("AIzaSy") || keyToTest.startsWith("AQ.")) {
+      const preferredModel = body.model?.trim() || process.env.GEMINI_MODEL || "gemini-3.5-flash";
+      const candidateModels = [
+        preferredModel,
+        "gemini-3.5-flash",
+        "gemini-3.8-flash",
+        "gemini-2.5-flash",
+        "gemini-1.5-flash",
+      ];
+      const uniqueModels = Array.from(new Set(candidateModels));
+
+      let lastErrData: any = null;
+      let lastStatus = 500;
+      let successfulModel = preferredModel;
+      let reply = "";
+      let isSuccess = false;
+
+      for (const model of uniqueModels) {
+        try {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${keyToTest}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: "Diga apenas: 'OK Navetech Telecom'." }] }],
+                generationConfig: { maxOutputTokens: 20, temperature: 0 },
+              }),
+            }
+          );
+
+          if (res.ok) {
+            const data = await res.json();
+            reply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "OK";
+            successfulModel = model;
+            isSuccess = true;
+            break;
+          } else {
+            lastStatus = res.status;
+            lastErrData = await res.json().catch(() => ({}));
+          }
+        } catch (fetchErr: any) {
+          lastErrData = { error: { message: fetchErr.message } };
         }
-      );
+      }
 
       const latencyMs = Date.now() - startTime;
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
+      if (!isSuccess) {
         return NextResponse.json({
           success: false,
           error:
-            errData.error?.message ||
-            `Erro da API Google Gemini HTTP ${res.status}. Verifique se a chave do AI Studio está correta.`,
+            lastErrData?.error?.message ||
+            `Erro da API Google Gemini HTTP ${lastStatus}. Verifique se a chave do AI Studio está correta.`,
           latencyMs,
         });
       }
 
-      const data = await res.json();
-      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "OK";
-
       return NextResponse.json({
         success: true,
         provider: "gemini",
-        message: `Conexão com o Google Gemini bem-sucedida! Modelo: ${model}`,
+        message: `Conexão com o Google Gemini bem-sucedida! Modelo ativo: ${successfulModel}`,
         sampleResponse: reply,
         latencyMs,
       });

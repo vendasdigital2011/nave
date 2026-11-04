@@ -311,7 +311,7 @@ export default function ConfiguracoesPage() {
                   type="button"
                   onClick={() => {
                     setSelectedAiProvider("gemini");
-                    setAiModelInput("gemini-1.5-flash");
+                    setAiModelInput("gemini-3.5-flash");
                   }}
                   className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
                     selectedAiProvider === "gemini"
@@ -414,9 +414,10 @@ export default function ConfiguracoesPage() {
                 >
                   {selectedAiProvider === "gemini" ? (
                     <>
-                      <option value="gemini-1.5-flash">gemini-1.5-flash (Recomendado - Gratuito e Rápido)</option>
-                      <option value="gemini-2.0-flash">gemini-2.0-flash (Mais Recente)</option>
-                      <option value="gemini-1.5-pro">gemini-1.5-pro (Raciocínio Avançado)</option>
+                      <option value="gemini-3.5-flash">gemini-3.5-flash (Recomendado - Ultra Rápido e Eficiente)</option>
+                      <option value="gemini-2.5-flash">gemini-2.5-flash (Alta Performance)</option>
+                      <option value="gemini-3.8-flash">gemini-3.8-flash (Raciocínio Expandido)</option>
+                      <option value="gemini-1.5-flash">gemini-1.5-flash (Legado)</option>
                     </>
                   ) : (
                     <>
