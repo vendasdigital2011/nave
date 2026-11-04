@@ -29,6 +29,9 @@ import {
   Tag,
   Calendar,
   AlertTriangle,
+  ThumbsUp,
+  ThumbsDown,
+  Bot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -117,6 +120,19 @@ function ConversasContent() {
   const [commercialClass, setCommercialClass] = useState("Interessado");
   const [selectedObjection, setSelectedObjection] = useState("");
   const [followupDate, setFollowupDate] = useState("");
+
+  // Copiloto IA (Fase 9)
+  const [isAnalyzingAi, setIsAnalyzingAi] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<{
+    summary: string;
+    interest_level: "Alto" | "Médio" | "Baixo" | "Indefinido";
+    objections: string[];
+    suggested_next_step: string;
+    suggested_reply: string;
+    caveats: string;
+  } | null>(null);
+  const [aiFeedback, setAiFeedback] = useState<"helpful" | "unhelpful" | null>(null);
+  const [copiedAiReply, setCopiedAiReply] = useState(false);
 
   // Contadores
   const [counts, setCounts] = useState({
@@ -240,9 +256,38 @@ function ConversasContent() {
 
   useEffect(() => {
     if (selectedConversation?.id) {
+      setAiAnalysis(null);
+      setAiFeedback(null);
+      setCopiedAiReply(false);
       loadConversationDetails(selectedConversation.id);
     }
   }, [selectedConversation?.id]);
+
+  // Copiloto IA (Fase 9: Análise sob demanda e sugestão para envio 100% humano)
+  const handleAnalyzeWithAi = async () => {
+    if (!selectedConversation || isAnalyzingAi) return;
+    setIsAnalyzingAi(true);
+    setAiFeedback(null);
+    setCopiedAiReply(false);
+
+    try {
+      const res = await fetch("/api/ai/suggest-reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversation_id: selectedConversation.id }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setAiAnalysis(data.data);
+      } else {
+        alert(data.error || "Não foi possível analisar a conversa com o Copiloto IA.");
+      }
+    } catch (err: any) {
+      alert("Erro ao acionar Copiloto IA: " + err.message);
+    } finally {
+      setIsAnalyzingAi(false);
+    }
+  };
 
   // 4. Enviar mensagem manual
   const handleSendMessage = async (e?: React.FormEvent) => {
@@ -534,6 +579,21 @@ function ConversasContent() {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={handleAnalyzeWithAi}
+                  disabled={isAnalyzingAi}
+                  className="text-xs border-orange-200 bg-orange-50/70 hover:bg-orange-100/90 text-orange-800 font-semibold shadow-2xs transition-colors"
+                >
+                  {isAnalyzingAi ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5 text-[#FF6A00]" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5 mr-1.5 text-[#FF6A00]" />
+                  )}
+                  {isAnalyzingAi ? "Analisando..." : "Analisar com IA"}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => loadConversationDetails(selectedConversation.id)}
                   className="text-xs border-slate-200"
                 >
@@ -610,6 +670,165 @@ function ConversasContent() {
 
             {/* Área de Envio e Templates */}
             <div className="border-t border-[#E2E8F0] bg-white p-4 space-y-3">
+              {/* Card do Copiloto IA (Fase 9: Envio 100% Humano) */}
+              {aiAnalysis && (
+                <div className="rounded-xl border border-orange-200 bg-linear-to-r from-orange-50/60 via-white to-amber-50/40 p-4 shadow-xs space-y-3">
+                  <div className="flex items-center justify-between border-b border-orange-100/80 pb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#FF6A00] text-white">
+                        <Sparkles className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="font-bold text-xs text-[#0F172A]">Copiloto IA Navetech</span>
+                      <Badge className="bg-emerald-100 text-emerald-800 text-[10px] font-semibold border-emerald-200">
+                        Envio 100% Humano
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] font-bold ${
+                          aiAnalysis.interest_level === "Alto"
+                            ? "border-emerald-300 text-emerald-700 bg-emerald-50"
+                            : aiAnalysis.interest_level === "Médio"
+                            ? "border-amber-300 text-amber-700 bg-amber-50"
+                            : aiAnalysis.interest_level === "Baixo"
+                            ? "border-slate-300 text-slate-600 bg-slate-50"
+                            : "border-blue-300 text-blue-700 bg-blue-50"
+                        }`}
+                      >
+                        Interesse: {aiAnalysis.interest_level}
+                      </Badge>
+                    </div>
+
+                    <button
+                      onClick={() => setAiAnalysis(null)}
+                      className="text-xs text-slate-400 hover:text-slate-600 font-bold px-1.5 py-0.5 rounded hover:bg-slate-100 transition-colors"
+                      title="Fechar sugestão"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Resumo e Próximo Passo */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-700">
+                    <div className="bg-white/80 rounded-lg p-2.5 border border-orange-100/60">
+                      <strong className="text-[11px] text-slate-500 uppercase tracking-wider block mb-1">
+                        Resumo da Situação
+                      </strong>
+                      <p className="text-xs text-slate-800">{aiAnalysis.summary}</p>
+                    </div>
+                    <div className="bg-white/80 rounded-lg p-2.5 border border-orange-100/60">
+                      <strong className="text-[11px] text-slate-500 uppercase tracking-wider block mb-1">
+                        Próximo Passo Recomendado
+                      </strong>
+                      <p className="text-xs text-slate-800">{aiAnalysis.suggested_next_step}</p>
+                    </div>
+                  </div>
+
+                  {/* Objeções se houver */}
+                  {aiAnalysis.objections && aiAnalysis.objections.length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[11px] font-semibold text-slate-500">Objeções detectadas:</span>
+                      {aiAnalysis.objections.map((obj, i) => (
+                        <span
+                          key={i}
+                          className="rounded-full bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 text-[10px] font-medium"
+                        >
+                          ⚠️ {obj}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Resposta Sugerida */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                        <Zap className="h-3 w-3 text-[#FF6A00]" />
+                        Sugestão de Resposta para o Cliente:
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        O vendedor revisa e envia manualmente
+                      </span>
+                    </div>
+
+                    <div className="rounded-lg bg-white p-3 border border-orange-200 text-xs text-slate-900 leading-relaxed font-sans shadow-2xs">
+                      {aiAnalysis.suggested_reply}
+                    </div>
+
+                    {/* Botões de Ação na Sugestão */}
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => {
+                            setInputText(aiAnalysis.suggested_reply);
+                          }}
+                          className="h-7 text-xs bg-[#FF6A00] hover:bg-[#EA580C] text-white font-medium shadow-2xs"
+                        >
+                          <ChevronRight className="h-3 w-3 mr-1" />
+                          Inserir no Campo de Mensagem
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText(aiAnalysis.suggested_reply);
+                            setCopiedAiReply(true);
+                            setTimeout(() => setCopiedAiReply(false), 2000);
+                          }}
+                          className="h-7 text-xs border-slate-200 text-slate-700 hover:bg-slate-50"
+                        >
+                          {copiedAiReply ? (
+                            <>
+                              <Check className="h-3 w-3 mr-1 text-emerald-600" />
+                              Copiado!
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3 w-3 mr-1 text-slate-500" />
+                              Copiar Texto
+                            </>
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* Feedback sobre a sugestão */}
+                      <div className="flex items-center gap-1 text-[11px] text-slate-500">
+                        <span>Útil?</span>
+                        <button
+                          type="button"
+                          onClick={() => setAiFeedback("helpful")}
+                          className={`p-1 rounded hover:bg-emerald-50 ${
+                            aiFeedback === "helpful" ? "text-emerald-600 font-bold" : "text-slate-400"
+                          }`}
+                          title="Sim, útil"
+                        >
+                          <ThumbsUp className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAiFeedback("unhelpful")}
+                          className={`p-1 rounded hover:bg-red-50 ${
+                            aiFeedback === "unhelpful" ? "text-red-600 font-bold" : "text-slate-400"
+                          }`}
+                          title="Não útil"
+                        >
+                          <ThumbsDown className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {aiAnalysis.caveats && (
+                      <p className="text-[10px] text-slate-500 italic pt-1">
+                        ℹ️ {aiAnalysis.caveats}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Barra de Templates Rápidos */}
               <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
                 <span className="text-[11px] font-bold text-slate-500 shrink-0 flex items-center gap-1">
@@ -679,9 +898,25 @@ function ConversasContent() {
       {selectedConversation && (
         <div className="w-80 border-l border-[#E2E8F0] bg-white overflow-y-auto p-4 space-y-5">
           {/* Header do Lead */}
-          <div className="border-b border-[#E2E8F0] pb-3">
-            <h3 className="font-bold text-sm text-[#0F172A]">Painel do Lead & Campanha</h3>
-            <p className="text-[11px] text-[#64748B]">Contexto comercial em tempo real</p>
+          <div className="border-b border-[#E2E8F0] pb-3 flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-sm text-[#0F172A]">Painel do Lead & Campanha</h3>
+              <p className="text-[11px] text-[#64748B]">Contexto comercial em tempo real</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAnalyzeWithAi}
+              disabled={isAnalyzingAi}
+              className="text-[11px] h-7 px-2 border-orange-200 bg-orange-50/70 hover:bg-orange-100 text-orange-800 font-medium"
+            >
+              {isAnalyzingAi ? (
+                <Loader2 className="h-3 w-3 animate-spin mr-1 text-[#FF6A00]" />
+              ) : (
+                <Sparkles className="h-3 w-3 mr-1 text-[#FF6A00]" />
+              )}
+              Copiloto
+            </Button>
           </div>
 
           {/* Dados do Cliente */}
