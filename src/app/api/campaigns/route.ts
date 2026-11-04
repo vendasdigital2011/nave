@@ -90,18 +90,34 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, type, description, stages } = body;
 
-    if (!name) {
+    if (!name || !name.trim()) {
       return NextResponse.json({ error: "O nome da campanha é obrigatório." }, { status: 400 });
     }
 
+    const cleanName = name.trim();
     const supabase = createServiceClient();
+
+    // 1. Proteção anti-duplicação: verificar se já existe campanha ativa com o mesmo nome
+    const { data: existingCamp } = await supabase
+      .from("campaigns")
+      .select("id, name")
+      .ilike("name", cleanName)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (existingCamp) {
+      return NextResponse.json(
+        { error: `Já existe uma campanha ativa com o nome "${existingCamp.name}". Escolha outro nome para evitar duplicidade.` },
+        { status: 409 }
+      );
+    }
 
     // Inserir campanha
     const { data: campaign, error: campErr } = await supabase
       .from("campaigns")
       .insert([
         {
-          name: name.trim(),
+          name: cleanName,
           type: type || "custom",
           description: description?.trim() || null,
           created_by: user.id || null,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ImportModal } from "@/components/clients/import-modal";
 import { AddClientModal } from "@/components/clients/add-client-modal";
@@ -14,12 +14,16 @@ import {
   Sparkles,
   Wifi,
   ArrowUpRight,
+  Loader2,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Campaign } from "@/types/database";
 
-export default function KanbanPage() {
+function KanbanContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlCampaignId = searchParams.get("campaignId");
+
   const [campaigns, setCampaigns] = useState<any[]>([
     {
       id: "c0000000-0000-0000-0000-000000000001",
@@ -35,11 +39,17 @@ export default function KanbanPage() {
     },
   ]);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>(
-    "c0000000-0000-0000-0000-000000000001"
+    urlCampaignId || "c0000000-0000-0000-0000-000000000001"
   );
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    if (urlCampaignId) {
+      setSelectedCampaignId(urlCampaignId);
+    }
+  }, [urlCampaignId]);
 
   useEffect(() => {
     fetch("/api/campaigns")
@@ -168,5 +178,19 @@ export default function KanbanPage() {
         onClientAdded={handleDataRefresh}
       />
     </div>
+  );
+}
+
+export default function KanbanPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-64 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-[#FF6A00]" />
+        </div>
+      }
+    >
+      <KanbanContent />
+    </Suspense>
   );
 }

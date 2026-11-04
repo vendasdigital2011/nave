@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Loader2,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,8 +63,11 @@ export default function CampanhasPage() {
     fetchCampaigns();
   }, []);
 
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+
   const handleCreateCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!formData.name.trim()) {
       toast.error("O nome da campanha é obrigatório.");
       return;
@@ -90,6 +94,30 @@ export default function CampanhasPage() {
       toast.error("Erro na criação: " + err.message);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteCampaign = async (id: string, name: string) => {
+    if (!confirm(`Deseja realmente excluir a campanha "${name}"? Esta ação removerá as etapas associadas a ela.`)) {
+      return;
+    }
+
+    setIsDeletingId(id);
+    try {
+      const res = await fetch(`/api/campaigns/${id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(`Campanha "${name}" excluída com sucesso!`);
+        fetchCampaigns();
+      } else {
+        toast.error(data.error || "Não foi possível excluir a campanha.");
+      }
+    } catch (err: any) {
+      toast.error("Erro ao excluir: " + err.message);
+    } finally {
+      setIsDeletingId(null);
     }
   };
 
@@ -243,15 +271,34 @@ export default function CampanhasPage() {
                     <span className="text-xs text-[#64748B] font-semibold">leads no funil</span>
                   </div>
 
-                  <Link href="/kanban">
-                    <Button
-                      size="sm"
-                      className="bg-[#0B0B0D] hover:bg-[#1E293B] text-white text-xs font-bold rounded-xl h-9 px-4 flex items-center gap-1.5"
-                    >
-                      <Kanban className="h-3.5 w-3.5 text-[#FF6A00]" />
-                      Abrir Kanban
-                    </Button>
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    {camp.id !== "c0000000-0000-0000-0000-000000000001" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDeleteCampaign(camp.id, camp.name)}
+                        disabled={isDeletingId === camp.id}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 text-xs font-semibold rounded-xl h-9 px-2.5 transition-colors"
+                        title="Excluir campanha"
+                      >
+                        {isDeletingId === camp.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    )}
+
+                    <Link href={`/kanban?campaignId=${camp.id}`}>
+                      <Button
+                        size="sm"
+                        className="bg-[#0B0B0D] hover:bg-[#1E293B] text-white text-xs font-bold rounded-xl h-9 px-4 flex items-center gap-1.5"
+                      >
+                        <Kanban className="h-3.5 w-3.5 text-[#FF6A00]" />
+                        Abrir Kanban
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             );
