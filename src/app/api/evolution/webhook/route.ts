@@ -122,10 +122,17 @@ export async function POST(req: NextRequest) {
       }
 
       let altNational = "";
+      let formattedAlt = "";
       if (nationalPhone.length === 11 && nationalPhone[2] === "9") {
         altNational = nationalPhone.slice(0, 2) + nationalPhone.slice(3);
+        if (altNational.length === 10) {
+          formattedAlt = `(${altNational.slice(0, 2)}) ${altNational.slice(2, 6)}-${altNational.slice(6)}`;
+        }
       } else if (nationalPhone.length === 10) {
         altNational = nationalPhone.slice(0, 2) + "9" + nationalPhone.slice(2);
+        if (altNational.length === 11) {
+          formattedAlt = `(${altNational.slice(0, 2)}) ${altNational.slice(2, 7)}-${altNational.slice(7)}`;
+        }
       }
 
       const phoneCandidates = Array.from(
@@ -135,22 +142,22 @@ export async function POST(req: NextRequest) {
             nationalPhone,
             formattedPhone,
             altNational,
+            formattedAlt,
             `55${nationalPhone}`,
             altNational ? `55${altNational}` : "",
             altJidPhone,
-            altJidPhone.startsWith("55") ? altJidPhone.slice(2) : `55${altJidPhone}`,
+            altJidPhone && altJidPhone.startsWith("55") ? altJidPhone.slice(2) : altJidPhone ? `55${altJidPhone}` : "",
             senderPhone,
-            senderPhone.startsWith("55") ? senderPhone.slice(2) : `55${senderPhone}`,
-          ].filter(Boolean)
+            senderPhone && senderPhone.startsWith("55") ? senderPhone.slice(2) : senderPhone ? `55${senderPhone}` : "",
+          ].filter((p): p is string => Boolean(p) && p.length >= 8)
         )
       );
-
-      const orFilter = phoneCandidates.map((p) => `contact_phone.eq.${p}`).join(",");
 
       let convQuery = supabase
         .from("conversations")
         .select("id, contact_client_id, campaign_lead_id, assigned_user_id, status, unread_count, contact_phone")
-        .or(orFilter);
+        .in("contact_phone", phoneCandidates)
+        .order("last_message_at", { ascending: false });
 
       if (instanceId) {
         convQuery = convQuery.eq("instance_id", instanceId);
@@ -181,47 +188,60 @@ export async function POST(req: NextRequest) {
         if (clientMatch) {
           matchedClientId = clientMatch.id;
 
-          // Verificar campaign_leads para este cliente
-          const { data: leads } = await supabase
-            .from("campaign_leads")
-            .select("id, assigned_user_id, campaign_id")
-            .eq("client_id", clientMatch.id);
+          // Se o cliente já possuía uma conversa vinculada, reusar para unificar o histórico
+          const { data: convByClient } = await supabase
+            .from("conversations")
+            .select("id, contact_client_id, campaign_lead_id, assigned_user_id, status, unread_count, contact_phone")
+            .eq("contact_client_id", matchedClientId)
+            .order("last_message_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
-          if (leads && leads.length === 1) {
-            // Correspondência inequívoca com 1 campanha
-            matchedLeadId = leads[0].id;
-            assignedUserId = leads[0].assigned_user_id;
-          } else if (leads && leads.length > 1) {
-            // Ambiguidade: cliente participa de mais de 1 campanha!
-            // Roteamento para TRIAGEM para evitar contaminação do funil
-            conversationStatus = "triagem";
+          if (convByClient) {
+            conversationId = convByClient.id;
+            matchedLeadId = convByClient.campaign_lead_id;
+            assignedUserId = convByClient.assigned_user_id;
+          } else {
+            // Verificar campaign_leads para este cliente
+            const { data: leads } = await supabase
+              .from("campaign_leads")
+              .select("id, assigned_user_id, campaign_id")
+              .eq("client_id", clientMatch.id);
+
+            if (leads && leads.length === 1) {
+              matchedLeadId = leads[0].id;
+              assignedUserId = leads[0].assigned_user_id;
+            } else if (leads && leads.length > 1) {
+              conversationStatus = "triagem";
+            }
           }
         } else {
-          // Cliente não cadastrado previamente -> vai para TRIAGEM
           conversationStatus = "triagem";
         }
 
-        const { data: newConv, error: convErr } = await supabase
-          .from("conversations")
-          .insert({
-            instance_id: instanceId,
-            contact_client_id: matchedClientId,
-            campaign_lead_id: matchedLeadId,
-            assigned_user_id: assignedUserId,
-            contact_phone: formattedPhone || nationalPhone || cleanPhone,
-            contact_name: clientMatch?.name || cleanPhone,
-            status: conversationStatus as any,
-            unread_count: isFromMe ? 0 : 1,
-            last_message_text: text,
-            last_message_at: new Date().toISOString(),
-          })
-          .select("id")
-          .single();
+        if (!conversationId) {
+          const { data: newConv, error: convErr } = await supabase
+            .from("conversations")
+            .insert({
+              instance_id: instanceId,
+              contact_client_id: matchedClientId,
+              campaign_lead_id: matchedLeadId,
+              assigned_user_id: assignedUserId,
+              contact_phone: formattedPhone || nationalPhone || cleanPhone,
+              contact_name: clientMatch?.name || cleanPhone,
+              status: conversationStatus as any,
+              unread_count: isFromMe ? 0 : 1,
+              last_message_text: text,
+              last_message_at: new Date().toISOString(),
+            })
+            .select("id")
+            .single();
 
-        if (convErr) {
-          console.error("[Webhook] Erro ao criar conversa:", convErr.message);
-        } else if (newConv) {
-          conversationId = newConv.id;
+          if (convErr) {
+            console.error("[Webhook] Erro ao criar conversa:", convErr.message);
+          } else if (newConv) {
+            conversationId = newConv.id;
+          }
         }
       }
 
@@ -242,24 +262,23 @@ export async function POST(req: NextRequest) {
         });
 
         // 6. Atualizar a conversa
-        if (existingConv) {
-          const nextUnread = isFromMe ? 0 : (existingConv.unread_count || 0) + 1;
-          const nextStatus = isFromMe
-            ? "waiting_client"
-            : existingConv.status === "closed"
-            ? "unread"
-            : "waiting_user";
+        const nextUnread = isFromMe ? 0 : ((existingConv?.unread_count || 0) + 1);
+        const nextStatus = isFromMe
+          ? "waiting_client"
+          : existingConv?.status === "closed"
+          ? "unread"
+          : "waiting_user";
 
-          await supabase
-            .from("conversations")
-            .update({
-              last_message_text: text,
-              last_message_at: new Date().toISOString(),
-              unread_count: nextUnread,
-              status: nextStatus,
-            })
-            .eq("id", conversationId);
-        }
+        await supabase
+          .from("conversations")
+          .update({
+            last_message_text: text,
+            last_message_at: new Date().toISOString(),
+            unread_count: nextUnread,
+            status: nextStatus,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", conversationId);
 
         // 7. Registrar evento na auditoria append-only
         try {
