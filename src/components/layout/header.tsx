@@ -3,16 +3,18 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Upload, Plus, LogOut, ShieldCheck, Shield, User as UserIcon } from "lucide-react";
+import { Upload, Plus, LogOut, ShieldCheck, Shield, User as UserIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuthUser } from "@/lib/auth-constants";
 
 interface HeaderProps {
   onOpenImportModal?: () => void;
   onOpenAddModal?: () => void;
+  isSidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
 }
 
-export function Header({ onOpenImportModal, onOpenAddModal }: HeaderProps) {
+export function Header({ onOpenImportModal, onOpenAddModal, isSidebarCollapsed, onToggleSidebar }: HeaderProps) {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
 
@@ -53,6 +55,21 @@ export function Header({ onOpenImportModal, onOpenAddModal }: HeaderProps) {
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#E2E8F0] bg-white px-4 md:px-6">
       <div className="flex items-center gap-3">
+        {onToggleSidebar && (
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="hidden md:flex h-8 w-8 items-center justify-center rounded-xl border border-[#E2E8F0] hover:bg-slate-50 text-slate-600 transition-colors"
+            title={isSidebarCollapsed ? "Expandir menu lateral" : "Recuar menu lateral"}
+          >
+            {isSidebarCollapsed ? (
+              <PanelLeftOpen className="h-4 w-4 text-[#FF6A00]" />
+            ) : (
+              <PanelLeftClose className="h-4 w-4 text-slate-500" />
+            )}
+          </button>
+        )}
+
         {/* Mobile Logo */}
         <div className="flex md:hidden items-center gap-2">
           <img

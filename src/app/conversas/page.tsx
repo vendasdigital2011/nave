@@ -32,6 +32,8 @@ import {
   ThumbsUp,
   ThumbsDown,
   Bot,
+  PanelRight,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -123,6 +125,7 @@ function ConversasContent() {
 
   // Copiloto IA (Fase 9)
   const [isAnalyzingAi, setIsAnalyzingAi] = useState(false);
+  const [isLeadPanelOpen, setIsLeadPanelOpen] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<{
     summary: string;
     interest_level: "Alto" | "Médio" | "Baixo" | "Indefinido";
@@ -461,48 +464,48 @@ function ConversasContent() {
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-[#F8FAFC]">
       {/* ========================================================================= */}
-      {/* COLUNA 1: CAIXA DE ENTRADA & FILTROS (LARGURA FIXA 340px)               */}
+      {/* COLUNA 1: CAIXA DE ENTRADA & FILTROS (LARGURA FIXA OTIMIZADA)            */}
       {/* ========================================================================= */}
-      <div className="flex w-80 md:w-96 flex-col border-r border-[#E2E8F0] bg-white">
+      <div className="flex w-72 lg:w-80 shrink-0 flex-col border-r border-[#E2E8F0] bg-white">
         {/* Header da Coluna 1 */}
-        <div className="border-b border-[#E2E8F0] p-4 space-y-3">
+        <div className="border-b border-[#E2E8F0] p-3 space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FFF4EC] text-[#FF6A00] border border-[#FFD0A8]">
-                <MessageSquare className="h-4 w-4" />
+              <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#FFF4EC] text-[#FF6A00] border border-[#FFD0A8]">
+                <MessageSquare className="h-3.5 w-3.5" />
               </span>
-              <h2 className="font-bold text-base text-[#0F172A]">Central de Conversas</h2>
+              <h2 className="font-bold text-sm text-[#0F172A]">Central de Conversas</h2>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={loadConversas}
-              className="h-8 w-8 p-0 text-[#64748B] hover:text-[#0F172A]"
+              className="h-7 w-7 p-0 text-[#64748B] hover:text-[#0F172A]"
               title="Atualizar conversas"
             >
-              <RefreshCw className={`h-4 w-4 ${isLoadingConversations ? "animate-spin" : ""}`} />
+              <RefreshCw className={`h-3.5 w-3.5 ${isLoadingConversations ? "animate-spin" : ""}`} />
             </Button>
           </div>
 
           {/* Campo de Busca */}
           <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#94A3B8]" />
+            <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-[#94A3B8]" />
             <input
               type="text"
-              placeholder="Buscar por nome, telefone..."
+              placeholder="Buscar por nome ou fone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full text-xs rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] pl-8 pr-3 py-2 text-[#0F172A] placeholder:text-[#94A3B8] outline-none focus:border-[#FF6A00]"
+              className="w-full text-xs rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] pl-8 pr-2.5 py-1.5 text-[#0F172A] placeholder:text-[#94A3B8] outline-none focus:border-[#FF6A00]"
             />
           </div>
 
           {/* Filtro de Campanha */}
-          <div className="flex items-center gap-2 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-2.5 py-1.5">
-            <Filter className="h-3.5 w-3.5 text-[#64748B]" />
+          <div className="flex items-center gap-2 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-2.5 py-1">
+            <Filter className="h-3 w-3 text-[#64748B] shrink-0" />
             <select
               value={selectedCampaign}
               onChange={(e) => setSelectedCampaign(e.target.value)}
-              className="w-full bg-transparent text-xs font-semibold text-[#0F172A] outline-none"
+              className="w-full bg-transparent text-xs font-semibold text-[#0F172A] outline-none truncate"
             >
               <option value="all">Todas as Campanhas</option>
               {campaigns.map((c) => (
@@ -514,35 +517,55 @@ function ConversasContent() {
           </div>
         </div>
 
-        {/* Abas de Status da Caixa */}
-        <div className="flex border-b border-[#E2E8F0] bg-slate-50/60 overflow-x-auto text-[11px] font-semibold divide-x divide-slate-200/60">
+        {/* Abas de Status Compactas sem scroll quebrado */}
+        <div className="flex border-b border-[#E2E8F0] bg-slate-50/70 p-1.5 gap-1 text-[10px] font-bold overflow-x-auto">
           <button
             onClick={() => setStatusFilter("all")}
-            className={`px-3 py-2 shrink-0 ${statusFilter === "all" ? "bg-white text-[#FF6A00] font-bold border-b-2 border-[#FF6A00]" : "text-slate-600 hover:text-slate-900"}`}
+            className={`px-2 py-1 rounded-lg shrink-0 transition-all ${
+              statusFilter === "all"
+                ? "bg-white text-[#FF6A00] shadow-2xs border border-orange-200"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
           >
             Todas ({counts.all})
           </button>
           <button
             onClick={() => setStatusFilter("unread")}
-            className={`px-3 py-2 shrink-0 ${statusFilter === "unread" ? "bg-white text-emerald-600 font-bold border-b-2 border-emerald-600" : "text-slate-600 hover:text-slate-900"}`}
+            className={`px-2 py-1 rounded-lg shrink-0 transition-all ${
+              statusFilter === "unread"
+                ? "bg-white text-emerald-600 shadow-2xs border border-emerald-200"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
           >
             Não lidas ({counts.unread})
           </button>
           <button
             onClick={() => setStatusFilter("waiting_user")}
-            className={`px-3 py-2 shrink-0 ${statusFilter === "waiting_user" ? "bg-white text-amber-600 font-bold border-b-2 border-amber-600" : "text-slate-600 hover:text-slate-900"}`}
+            className={`px-2 py-1 rounded-lg shrink-0 transition-all ${
+              statusFilter === "waiting_user"
+                ? "bg-white text-amber-600 shadow-2xs border border-amber-200"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
           >
-            Aguard. Vendedor ({counts.waiting_user})
+            Vendedor ({counts.waiting_user})
           </button>
           <button
             onClick={() => setStatusFilter("waiting_client")}
-            className={`px-3 py-2 shrink-0 ${statusFilter === "waiting_client" ? "bg-white text-blue-600 font-bold border-b-2 border-blue-600" : "text-slate-600 hover:text-slate-900"}`}
+            className={`px-2 py-1 rounded-lg shrink-0 transition-all ${
+              statusFilter === "waiting_client"
+                ? "bg-white text-blue-600 shadow-2xs border border-blue-200"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
           >
-            Aguard. Cliente ({counts.waiting_client})
+            Cliente ({counts.waiting_client})
           </button>
           <button
             onClick={() => setStatusFilter("triagem")}
-            className={`px-3 py-2 shrink-0 ${statusFilter === "triagem" ? "bg-white text-purple-600 font-bold border-b-2 border-purple-600" : "text-slate-600 hover:text-slate-900"}`}
+            className={`px-2 py-1 rounded-lg shrink-0 transition-all ${
+              statusFilter === "triagem"
+                ? "bg-white text-purple-600 shadow-2xs border border-purple-200"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
           >
             Triagem ({counts.triagem})
           </button>
@@ -676,6 +699,21 @@ function ConversasContent() {
                 >
                   <RefreshCw className={`h-3 w-3 mr-1 ${isLoadingMessages ? "animate-spin" : ""}`} />
                   Recarregar
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsLeadPanelOpen(!isLeadPanelOpen)}
+                  className={`text-xs font-semibold transition-all ${
+                    isLeadPanelOpen
+                      ? "bg-orange-50 border-[#FFD0A8] text-[#FF6A00]"
+                      : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                  }`}
+                  title={isLeadPanelOpen ? "Recuar painel lateral do lead" : "Exibir dados do lead e campanha"}
+                >
+                  <PanelRight className="h-3.5 w-3.5 mr-1 text-[#FF6A00]" />
+                  <span>{isLeadPanelOpen ? "Recuar Lead" : "Dados do Lead"}</span>
                 </Button>
               </div>
             </div>
@@ -906,21 +944,22 @@ function ConversasContent() {
                 </div>
               )}
 
-              {/* Barra de Templates Rápidos */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-                <span className="text-[11px] font-bold text-slate-500 shrink-0 flex items-center gap-1">
+              {/* Barra de Templates Rápidos (Chips Responsivos sem Scrollbar) */}
+              <div className="flex items-center gap-1.5 flex-wrap pb-1 text-xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 shrink-0 flex items-center gap-1 mr-1">
                   <Sparkles className="h-3 w-3 text-[#FF6A00]" />
                   Templates:
                 </span>
                 {MESSAGE_TEMPLATES.map((tmpl) => (
                   <button
                     key={tmpl.id}
+                    type="button"
                     onClick={() => {
                       const clientName = selectedConversation.client?.name || selectedConversation.contact_name || "Cliente";
                       const personalized = tmpl.text.replace(/\{NOME\}/g, clientName.split(" ")[0]);
                       setInputText(personalized);
                     }}
-                    className="shrink-0 rounded-lg bg-slate-100 hover:bg-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors"
+                    className="rounded-lg border border-slate-200 bg-white hover:border-[#FFD0A8] hover:bg-orange-50/50 px-2 py-0.5 text-[11px] font-semibold text-slate-700 transition-all shadow-2xs"
                   >
                     {tmpl.title}
                   </button>
@@ -970,90 +1009,87 @@ function ConversasContent() {
       </div>
 
       {/* ========================================================================= */}
-      {/* COLUNA 3: PAINEL COMERCIAL DO LEAD (LARGURA FIXA 340px)                  */}
+      {/* COLUNA 3: PAINEL COMERCIAL DO LEAD (DOBRÁVEL / TOGGLEÁVEL)               */}
       {/* ========================================================================= */}
-      {selectedConversation && (
-        <div className="w-80 border-l border-[#E2E8F0] bg-white overflow-y-auto p-4 space-y-5">
+      {selectedConversation && isLeadPanelOpen && (
+        <div className="w-80 shrink-0 border-l border-[#E2E8F0] bg-white overflow-y-auto p-4 space-y-4 shadow-sm animate-in slide-in-from-right-2 duration-200">
           {/* Header do Lead */}
           <div className="border-b border-[#E2E8F0] pb-3 flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-sm text-[#0F172A]">Painel do Lead & Campanha</h3>
-              <p className="text-[11px] text-[#64748B]">Contexto comercial em tempo real</p>
+            <div className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-50 text-[#FF6A00] border border-orange-200">
+                <UserCheck className="h-4 w-4" />
+              </span>
+              <div>
+                <h3 className="font-bold text-sm text-[#0F172A] leading-tight">Dados do Lead</h3>
+                <p className="text-[10px] text-[#64748B]">Contexto comercial e funil</p>
+              </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAnalyzeWithAi}
-              disabled={isAnalyzingAi}
-              className="text-[11px] h-7 px-2 border-orange-200 bg-orange-50/70 hover:bg-orange-100 text-orange-800 font-medium"
+            <button
+              type="button"
+              onClick={() => setIsLeadPanelOpen(false)}
+              className="h-7 w-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors"
+              title="Recuar painel"
             >
-              {isAnalyzingAi ? (
-                <Loader2 className="h-3 w-3 animate-spin mr-1 text-[#FF6A00]" />
-              ) : (
-                <Sparkles className="h-3 w-3 mr-1 text-[#FF6A00]" />
-              )}
-              Copiloto
-            </Button>
+              <X className="h-4 w-4" />
+            </button>
           </div>
 
           {/* Dados do Cliente */}
-          <div className="rounded-xl border border-[#E2E8F0] bg-slate-50/60 p-3.5 space-y-2 text-xs">
-            <div className="flex justify-between">
-              <span className="text-slate-500">Nome:</span>
-              <span className="font-bold text-[#0F172A]">
+          <div className="rounded-xl border border-[#E2E8F0] bg-slate-50/70 p-3 space-y-2 text-xs">
+            <div>
+              <span className="text-[10px] font-semibold text-slate-500 block uppercase tracking-wider">Nome</span>
+              <span className="font-bold text-sm text-[#0F172A]">
                 {selectedConversation.client?.name || selectedConversation.contact_name}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Telefone:</span>
-              <span className="font-mono text-[#0F172A]">
+            <div className="flex items-center justify-between border-t border-slate-200/60 pt-2">
+              <span className="text-slate-500 font-medium">Telefone:</span>
+              <span className="font-mono font-semibold text-[#0F172A]">
                 {formatPhone(selectedConversation.contact_phone)}
               </span>
             </div>
             {selectedConversation.client?.current_plan && (
-              <div className="flex justify-between">
-                <span className="text-slate-500">Plano Atual:</span>
-                <span className="font-semibold text-slate-700">
+              <div className="flex items-center justify-between border-t border-slate-200/60 pt-2">
+                <span className="text-slate-500 font-medium">Plano Atual:</span>
+                <span className="font-bold text-slate-700 bg-slate-200/70 px-2 py-0.5 rounded-md text-[11px]">
                   {selectedConversation.client.current_plan}
                 </span>
               </div>
             )}
             {selectedConversation.client?.target_plan && (
-              <div className="flex justify-between">
-                <span className="text-slate-500">Plano Proposto:</span>
-                <span className="font-bold text-[#FF6A00]">
+              <div className="flex items-center justify-between border-t border-slate-200/60 pt-2">
+                <span className="text-slate-500 font-medium">Plano Alvo:</span>
+                <span className="font-bold text-[#FF6A00] bg-[#FFF4EC] border border-[#FFD0A8] px-2 py-0.5 rounded-md text-[11px]">
                   {selectedConversation.client.target_plan}
                 </span>
               </div>
             )}
           </div>
 
-          {/* Etapa do Funil no Kanban */}
+          {/* Etapa do Funil no Kanban (Dropdown limpo que nunca corta o texto) */}
           {selectedConversation.campaign_lead && (
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-[#0F172A] block">
-                Etapa no Funil ({selectedConversation.campaign_lead.campaign?.name || "Upgrade"})
-              </label>
-
-              <div className="grid grid-cols-2 gap-1.5">
-                {campaignStages.map((stg) => {
-                  const isCurrent = selectedConversation.campaign_lead?.stage_id === stg.id;
-                  return (
-                    <button
-                      key={stg.id}
-                      onClick={() => handleMoveStage(stg.id)}
-                      disabled={isMovingStage || isCurrent}
-                      className={`text-[11px] font-bold py-1.5 px-2 rounded-lg border text-left truncate transition-all ${
-                        isCurrent
-                          ? "bg-[#FF6A00] text-white border-[#FF6A00] shadow-2xs"
-                          : "bg-slate-50 text-slate-700 border-slate-200 hover:border-[#FFD0A8]"
-                      }`}
-                    >
-                      {stg.name}
-                    </button>
-                  );
-                })}
+            <div className="space-y-1.5 border-t border-[#E2E8F0] pt-3">
+              <div className="flex items-center justify-between text-xs">
+                <label className="font-bold text-[#0F172A]">
+                  Etapa no Funil
+                </label>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-[#FF6A00] border border-orange-200">
+                  {selectedConversation.campaign_lead.stage?.name || "Importados"}
+                </span>
               </div>
+
+              <select
+                value={selectedConversation.campaign_lead?.stage_id || ""}
+                onChange={(e) => handleMoveStage(e.target.value)}
+                disabled={isMovingStage}
+                className="w-full text-xs font-semibold p-2.5 rounded-xl border border-[#E2E8F0] bg-white text-[#0F172A] focus:outline-none focus:border-[#FF6A00] shadow-2xs"
+              >
+                {campaignStages.map((stg) => (
+                  <option key={stg.id} value={stg.id}>
+                    {stg.name}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 
