@@ -182,22 +182,28 @@ function ConversasContent() {
           if (json.counts) setCounts(json.counts);
 
           const targetConvId = searchParams.get("id") || searchParams.get("conversationId");
+          let targetHandled = false;
 
           // 1. Se veio id de conversa na URL
-          if (targetConvId && !selectedConversation) {
+          if (targetConvId) {
             const foundById = (json.conversations || []).find(
               (c: Conversation) => c.id === targetConvId
             );
             if (foundById) {
               setSelectedConversation(foundById);
+              targetHandled = true;
             } else {
               try {
                 const resConv = await fetch(`/api/conversations/${targetConvId}`);
                 if (resConv.ok) {
                   const d = await resConv.json();
                   if (d.success && d.conversation) {
-                    setConversations((prev) => [d.conversation, ...prev]);
+                    setConversations((prev) => {
+                      const exists = prev.some((c) => c.id === d.conversation.id);
+                      return exists ? prev : [d.conversation, ...prev];
+                    });
                     setSelectedConversation(d.conversation);
+                    targetHandled = true;
                   }
                 }
               } catch (e) {
@@ -206,12 +212,13 @@ function ConversasContent() {
             }
           }
           // 2. Se veio clientId na URL
-          else if (targetClientId && !selectedConversation) {
+          if (!targetHandled && targetClientId) {
             const found = (json.conversations || []).find(
-              (c: Conversation) => c.contact_client_id === targetClientId
+              (c: Conversation) => c.contact_client_id === targetClientId || (c as any).client?.id === targetClientId
             );
             if (found) {
               setSelectedConversation(found);
+              targetHandled = true;
             } else {
               // Provisionar ou recuperar conversa via API caso ainda não listada
               try {
@@ -228,6 +235,7 @@ function ConversasContent() {
                       return exists ? prev : [provData.conversation, ...prev];
                     });
                     setSelectedConversation(provData.conversation);
+                    targetHandled = true;
                   }
                 }
               } catch (e) {
@@ -236,7 +244,7 @@ function ConversasContent() {
             }
           }
           // 3. Fallback: selecionar a primeira conversa da lista se nenhuma foi selecionada
-          else if (!selectedConversation && json.conversations && json.conversations.length > 0) {
+          if (!targetHandled && !selectedConversation && json.conversations && json.conversations.length > 0) {
             setSelectedConversation(json.conversations[0]);
           }
         }
@@ -248,9 +256,11 @@ function ConversasContent() {
     }
   };
 
+  const targetConvId = searchParams.get("id") || searchParams.get("conversationId");
+
   useEffect(() => {
     loadConversas();
-  }, [statusFilter, selectedCampaign]);
+  }, [statusFilter, selectedCampaign, targetClientId, targetConvId]);
 
   // Busca com debounce simples
   useEffect(() => {

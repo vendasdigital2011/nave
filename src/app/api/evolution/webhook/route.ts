@@ -59,8 +59,21 @@ export async function POST(req: NextRequest) {
       }
 
       const isFromMe = Boolean(key?.fromMe);
-      const rawJid = key.remoteJid;
+      
+      // WhatsApp v2 / Baileys: quando remoteJid termina com @lid (Lidded JID de privacidade),
+      // o telefone real do contato está em key.remoteJidAlt, key.participantAlt ou data.sender.
+      let rawJid = key?.remoteJid || "";
+      if (rawJid.includes("@lid")) {
+        rawJid = key?.remoteJidAlt || key?.participantAlt || data?.sender || rawJid;
+      }
+      if (rawJid.includes("@lid") && (data?.sender || key?.participant)) {
+        const alt = data?.sender || key?.participant;
+        if (!alt.includes("@lid")) rawJid = alt;
+      }
+
       const cleanPhone = rawJid.replace(/@.*$/, "").replace(/\D/g, "");
+      const altJidPhone = (key?.remoteJidAlt || "").replace(/@.*$/, "").replace(/\D/g, "");
+      const senderPhone = (data?.sender || "").replace(/@.*$/, "").replace(/\D/g, "");
 
       // Extração de texto da mensagem
       const text =
@@ -124,6 +137,10 @@ export async function POST(req: NextRequest) {
             altNational,
             `55${nationalPhone}`,
             altNational ? `55${altNational}` : "",
+            altJidPhone,
+            altJidPhone.startsWith("55") ? altJidPhone.slice(2) : `55${altJidPhone}`,
+            senderPhone,
+            senderPhone.startsWith("55") ? senderPhone.slice(2) : `55${senderPhone}`,
           ].filter(Boolean)
         )
       );
