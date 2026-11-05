@@ -95,17 +95,52 @@ export async function POST(req: NextRequest) {
       let assignedUserId: string | null = null;
       let conversationStatus: string = isFromMe ? "waiting_client" : "unread";
 
-      // Procurar conversa existente
+      // Variações de telefone para compatibilidade total (com/sem 55, formatado, com/sem 9º dígito)
+      const nationalPhone =
+        cleanPhone.startsWith("55") && cleanPhone.length >= 12
+          ? cleanPhone.slice(2)
+          : cleanPhone;
+
+      let formattedPhone = "";
+      if (nationalPhone.length === 11) {
+        formattedPhone = `(${nationalPhone.slice(0, 2)}) ${nationalPhone.slice(2, 7)}-${nationalPhone.slice(7)}`;
+      } else if (nationalPhone.length === 10) {
+        formattedPhone = `(${nationalPhone.slice(0, 2)}) ${nationalPhone.slice(2, 6)}-${nationalPhone.slice(6)}`;
+      }
+
+      let altNational = "";
+      if (nationalPhone.length === 11 && nationalPhone[2] === "9") {
+        altNational = nationalPhone.slice(0, 2) + nationalPhone.slice(3);
+      } else if (nationalPhone.length === 10) {
+        altNational = nationalPhone.slice(0, 2) + "9" + nationalPhone.slice(2);
+      }
+
+      const phoneCandidates = Array.from(
+        new Set(
+          [
+            cleanPhone,
+            nationalPhone,
+            formattedPhone,
+            altNational,
+            `55${nationalPhone}`,
+            altNational ? `55${altNational}` : "",
+          ].filter(Boolean)
+        )
+      );
+
+      const orFilter = phoneCandidates.map((p) => `contact_phone.eq.${p}`).join(",");
+
       let convQuery = supabase
         .from("conversations")
-        .select("id, contact_client_id, campaign_lead_id, assigned_user_id, status, unread_count")
-        .eq("contact_phone", cleanPhone);
+        .select("id, contact_client_id, campaign_lead_id, assigned_user_id, status, unread_count, contact_phone")
+        .or(orFilter);
 
       if (instanceId) {
         convQuery = convQuery.eq("instance_id", instanceId);
       }
 
-      const { data: existingConv } = await convQuery.maybeSingle();
+      const { data: convMatches } = await convQuery.limit(1);
+      const existingConv = convMatches && convMatches.length > 0 ? convMatches[0] : null;
 
       if (existingConv) {
         conversationId = existingConv.id;
@@ -120,7 +155,10 @@ export async function POST(req: NextRequest) {
 
         const clientMatch = (matchedClients || []).find((c: any) => {
           const cPhone = c.phone.replace(/\D/g, "");
-          return cPhone.includes(cleanPhone) || cleanPhone.includes(cPhone);
+          const cNational = cPhone.startsWith("55") && cPhone.length >= 12 ? cPhone.slice(2) : cPhone;
+          return phoneCandidates.some(
+            (p) => cPhone === p || cNational === p || (p.length >= 8 && cPhone.endsWith(p.slice(-8)))
+          );
         });
 
         if (clientMatch) {
@@ -153,7 +191,7 @@ export async function POST(req: NextRequest) {
             contact_client_id: matchedClientId,
             campaign_lead_id: matchedLeadId,
             assigned_user_id: assignedUserId,
-            contact_phone: cleanPhone,
+            contact_phone: formattedPhone || nationalPhone || cleanPhone,
             contact_name: clientMatch?.name || cleanPhone,
             status: conversationStatus as any,
             unread_count: isFromMe ? 0 : 1,

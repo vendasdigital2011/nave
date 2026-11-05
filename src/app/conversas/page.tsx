@@ -233,8 +233,8 @@ function ConversasContent() {
   }, [searchTerm]);
 
   // 3. Carregar mensagens e detalhes da conversa selecionada
-  const loadConversationDetails = async (convId: string) => {
-    setIsLoadingMessages(true);
+  const loadConversationDetails = async (convId: string, isSilent = false) => {
+    if (!isSilent) setIsLoadingMessages(true);
     try {
       const [msgRes, detRes] = await Promise.all([
         fetch(`/api/conversations/${convId}/messages`),
@@ -243,8 +243,13 @@ function ConversasContent() {
 
       if (msgRes.ok) {
         const msgJson = await msgRes.json();
-        if (msgJson.success) {
-          setMessages(msgJson.messages || []);
+        if (msgJson.success && msgJson.messages) {
+          setMessages((prev) => {
+            if (prev.length !== msgJson.messages.length) {
+              setTimeout(scrollToBottom, 150);
+            }
+            return msgJson.messages;
+          });
         }
       }
 
@@ -254,7 +259,7 @@ function ConversasContent() {
           setNotes(detJson.notes || []);
           setEvents(detJson.events || []);
           if (detJson.conversation) {
-            setSelectedConversation(detJson.conversation);
+            setSelectedConversation((prev) => (prev ? { ...prev, ...detJson.conversation } : detJson.conversation));
 
             // Carregar etapas da campanha deste lead
             const campId = detJson.conversation.campaign_lead?.campaign_id;
@@ -272,8 +277,10 @@ function ConversasContent() {
     } catch (err) {
       console.error("Erro ao carregar detalhes da conversa:", err);
     } finally {
-      setIsLoadingMessages(false);
-      setTimeout(scrollToBottom, 150);
+      if (!isSilent) {
+        setIsLoadingMessages(false);
+        setTimeout(scrollToBottom, 150);
+      }
     }
   };
 
@@ -282,8 +289,17 @@ function ConversasContent() {
       setAiAnalysis(null);
       setAiFeedback(null);
       setCopiedAiReply(false);
-      loadConversationDetails(selectedConversation.id);
+      loadConversationDetails(selectedConversation.id, false);
     }
+  }, [selectedConversation?.id]);
+
+  // Polling automático a cada 5 segundos para sincronização do chat em tempo real
+  useEffect(() => {
+    if (!selectedConversation?.id) return;
+    const interval = setInterval(() => {
+      loadConversationDetails(selectedConversation.id, true);
+    }, 5000);
+    return () => clearInterval(interval);
   }, [selectedConversation?.id]);
 
   // Copiloto IA (Fase 9: Análise sob demanda e sugestão para envio 100% humano)
