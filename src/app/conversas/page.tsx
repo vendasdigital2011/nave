@@ -181,8 +181,32 @@ function ConversasContent() {
           setConversations(json.conversations || []);
           if (json.counts) setCounts(json.counts);
 
-          // Se veio clientId na URL, seleciona a conversa do cliente
-          if (targetClientId && !selectedConversation) {
+          const targetConvId = searchParams.get("id") || searchParams.get("conversationId");
+
+          // 1. Se veio id de conversa na URL
+          if (targetConvId && !selectedConversation) {
+            const foundById = (json.conversations || []).find(
+              (c: Conversation) => c.id === targetConvId
+            );
+            if (foundById) {
+              setSelectedConversation(foundById);
+            } else {
+              try {
+                const resConv = await fetch(`/api/conversations/${targetConvId}`);
+                if (resConv.ok) {
+                  const d = await resConv.json();
+                  if (d.success && d.conversation) {
+                    setConversations((prev) => [d.conversation, ...prev]);
+                    setSelectedConversation(d.conversation);
+                  }
+                }
+              } catch (e) {
+                console.error("Falha ao buscar conversa por id:", e);
+              }
+            }
+          }
+          // 2. Se veio clientId na URL
+          else if (targetClientId && !selectedConversation) {
             const found = (json.conversations || []).find(
               (c: Conversation) => c.contact_client_id === targetClientId
             );
@@ -210,6 +234,10 @@ function ConversasContent() {
                 console.error("Falha ao provisionar conversa:", e);
               }
             }
+          }
+          // 3. Fallback: selecionar a primeira conversa da lista se nenhuma foi selecionada
+          else if (!selectedConversation && json.conversations && json.conversations.length > 0) {
+            setSelectedConversation(json.conversations[0]);
           }
         }
       }

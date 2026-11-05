@@ -8,6 +8,9 @@ export function middleware(request: NextRequest) {
 
   const isLoginPage = pathname === "/login";
   const isApiAuth = pathname.startsWith("/api/auth");
+  const isEvolutionWebhook =
+    pathname === "/api/evolution/webhook" ||
+    pathname.startsWith("/api/evolution/webhook/");
   const isStatic =
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon.ico") ||
@@ -16,12 +19,20 @@ export function middleware(request: NextRequest) {
     pathname.endsWith(".svg") ||
     pathname.endsWith(".webp");
 
-  if (isStatic || isApiAuth) {
+  // Rotas públicas que não exigem cookie de autenticação do CRM
+  if (isStatic || isApiAuth || isEvolutionWebhook) {
     return NextResponse.next();
   }
 
-  // Se não houver sessão e o usuário tenta acessar rota protegida
+  // Se não houver sessão e o cliente tenta acessar a API ou página protegida
   if (!sessionCookie && !isLoginPage) {
+    // Chamadas de API não devem ser redirecionadas com HTML de login para evitar falhas em webhooks e fetches
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: "Não autenticado.", code: "UNAUTHORIZED" },
+        { status: 401 }
+      );
+    }
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
   }
