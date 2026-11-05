@@ -80,9 +80,9 @@ export async function POST(request: NextRequest) {
         client:clients (
           id,
           name,
-          plan,
+          current_plan,
+          target_plan,
           status,
-          city,
           condominium
         ),
         campaign_lead:campaign_leads (
@@ -96,8 +96,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (convError || !conversation) {
+      console.error("Erro ao buscar conversa para Copiloto IA:", convError?.message || "Não encontrada");
       return NextResponse.json(
-        { error: "Conversa não encontrada", code: "NOT_FOUND" },
+        { error: "Conversa não encontrada: " + (convError?.message || "ID inexistente"), code: "NOT_FOUND" },
         { status: 404 }
       );
     }
@@ -130,7 +131,7 @@ export async function POST(request: NextRequest) {
 
     const messages = rawMessages || [];
     const clientName = rawConv.contact_name || clientData?.name || "Cliente";
-    const clientPlan = clientData?.plan || "Plano Atual";
+    const clientPlan = clientData?.current_plan || clientData?.plan || "Plano Atual";
     const campaignObj = Array.isArray(campaignLead?.campaign) ? campaignLead?.campaign[0] : campaignLead?.campaign;
     const stageObj = Array.isArray(campaignLead?.stage) ? campaignLead?.stage[0] : campaignLead?.stage;
     const campaignName = campaignObj?.name || "Upgrade de Conexão";
@@ -200,13 +201,14 @@ Analise a conversa e gere a resposta JSON estruturada.`;
       // 4A. Provedor 1: Google Gemini (se GEMINI_API_KEY estiver configurada)
       if (geminiKey) {
         try {
-          const preferredModel = process.env.GEMINI_MODEL || "gemini-3.5-flash";
+          const preferredModel = process.env.GEMINI_MODEL || "gemini-2.5-flash";
           const candidateModels = [
             preferredModel,
-            "gemini-3.5-flash",
-            "gemini-3.8-flash",
             "gemini-2.5-flash",
+            "gemini-2.0-flash",
             "gemini-1.5-flash",
+            "gemini-2.5-pro",
+            "gemini-1.5-pro",
           ];
           const uniqueModels = Array.from(new Set(candidateModels));
 
