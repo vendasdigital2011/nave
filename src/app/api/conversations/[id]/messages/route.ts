@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { AUTH_COOKIE_NAME, AuthUser } from "@/lib/auth-constants";
 import { createServiceClient } from "@/lib/supabase/server";
 import { EvolutionService } from "@/lib/evolution-api";
+import { advanceStageOnMessageSent } from "@/lib/kanban-automation";
 
 async function getAuthenticatedUser(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
@@ -153,13 +154,13 @@ export async function POST(
       })
       .eq("id", conversationId);
 
-    // 5. Se vinculado a um lead de campanha, atualiza last_activity_at
-    if (conversation.campaign_lead_id) {
-      await supabase
-        .from("campaign_leads")
-        .update({ last_activity_at: new Date().toISOString() })
-        .eq("id", conversation.campaign_lead_id);
-    }
+    // 5. Automação do Kanban: avançar etapa automaticamente no envio da mensagem
+    await advanceStageOnMessageSent(supabase, {
+      conversationId,
+      campaignLeadId: conversation.campaign_lead_id,
+      contactClientId: conversation.contact_client_id,
+      actorUserId: user.id || null,
+    });
 
     // 6. Registrar evento na auditoria append-only
     try {

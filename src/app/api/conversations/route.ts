@@ -31,6 +31,72 @@ export async function GET(request: Request) {
 
     const supabase = createServiceClient();
 
+    // 0. Auto-provisionamento inteligente e mapeamento de leads por campanha
+    let campaignLeadIds: string[] = [];
+    let campaignClientIds: string[] = [];
+
+    if (campaignId && campaignId !== "all") {
+      const { data: cLeads } = await supabase
+        .from("campaign_leads")
+        .select(`
+          id,
+          campaign_id,
+          client_id,
+          assigned_user_id,
+          client:clients(id, name, phone)
+        `)
+        .eq("campaign_id", campaignId);
+
+      if (cLeads && cLeads.length > 0) {
+        campaignLeadIds = cLeads.map((l) => l.id);
+        campaignClientIds = cLeads.map((l) => l.client_id).filter(Boolean);
+
+        const defaultInstId = "6c98699d-3684-4a35-a47f-8dfcaa950476";
+        const { data: existingConvs } = await supabase
+          .from("conversations")
+          .select("id, contact_client_id")
+          .in("contact_client_id", campaignClientIds);
+
+        const existingClientIds = new Set((existingConvs || []).map((c) => c.contact_client_id));
+        const unprovisioned = cLeads.filter(
+          (l: any) => !existingClientIds.has(l.client_id) && l.client && l.client.phone
+        );
+
+        if (unprovisioned.length > 0) {
+          const nowStr = new Date().toISOString();
+          for (const un of unprovisioned) {
+            try {
+              await supabase.from("conversations").insert({
+                instance_id: defaultInstId,
+                contact_client_id: un.client_id,
+                campaign_lead_id: un.id,
+                assigned_user_id: un.assigned_user_id,
+                contact_phone: (un.client as any).phone,
+                contact_name: (un.client as any).name,
+                status: "waiting_user",
+                unread_count: 0,
+                last_message_text: "Lead disponível para contato",
+                last_message_at: nowStr,
+                created_at: nowStr,
+                updated_at: nowStr,
+              });
+            } catch {
+              // Ignora duplicidades de chave única
+            }
+          }
+        }
+      } else {
+        // Campanha sem nenhum lead cadastrado
+        return NextResponse.json({
+          success: true,
+          conversations: [],
+          counts: { all: 0, unread: 0, waiting_user: 0, waiting_client: 0, triagem: 0, closed: 0 },
+        });
+      }
+    }
+
+    const effectiveLimit = campaignId && campaignId !== "all" ? 1000 : limit;
+
     let query = supabase
       .from("conversations")
       .select(`
@@ -57,7 +123,14 @@ export async function GET(request: Request) {
         )
       `)
       .order("last_message_at", { ascending: false })
-      .limit(limit);
+      .limit(effectiveLimit);
+
+    // Filtro por campanha direto no banco
+    if (campaignLeadIds.length > 0) {
+      query = query.or(
+        `campaign_lead_id.in.(${campaignLeadIds.join(",")}),contact_client_id.in.(${campaignClientIds.join(",")})`
+      );
+    }
 
     // 1. RBAC: Vendedor vê conversas atribuídas a ele ou sem responsável (fila de triagem)
     if (user.role === "seller" && user.id) {
@@ -95,7 +168,9 @@ export async function GET(request: Request) {
 
     if (campaignId && campaignId !== "all") {
       filtered = filtered.filter(
-        (c: any) => c.campaign_lead?.campaign_id === campaignId
+        (c: any) =>
+          c.campaign_lead?.campaign_id === campaignId ||
+          campaignClientIds.includes(c.contact_client_id)
       );
     }
 

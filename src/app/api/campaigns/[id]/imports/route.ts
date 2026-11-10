@@ -269,6 +269,50 @@ export async function POST(
           client_id: clientId,
           campaign_lead_id: newLead?.id,
         });
+
+        // Auto-provisionar conversa na central de conversas para envio imediato
+        if (newLead) {
+          const defaultInstId = "6c98699d-3684-4a35-a47f-8dfcaa950476";
+          try {
+            const { data: existingConv } = await supabase
+              .from("conversations")
+              .select("id")
+              .or(`contact_client_id.eq.${clientId},contact_phone.eq.${phone}`)
+              .limit(1)
+              .maybeSingle();
+
+            if (existingConv) {
+              await supabase
+                .from("conversations")
+                .update({
+                  contact_client_id: clientId,
+                  campaign_lead_id: newLead.id,
+                  contact_name: rawName,
+                  updated_at: now,
+                })
+                .eq("id", existingConv.id);
+            } else {
+              await supabase
+                .from("conversations")
+                .insert({
+                  instance_id: defaultInstId,
+                  contact_client_id: clientId,
+                  campaign_lead_id: newLead.id,
+                  assigned_user_id: null,
+                  contact_phone: phone,
+                  contact_name: rawName,
+                  status: "waiting_user",
+                  unread_count: 0,
+                  last_message_text: "Lead importado na campanha",
+                  last_message_at: now,
+                  created_at: now,
+                  updated_at: now,
+                });
+            }
+          } catch {
+            // Ignora conflitos pontuais
+          }
+        }
       }
     }
 

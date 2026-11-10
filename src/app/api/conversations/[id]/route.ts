@@ -62,6 +62,34 @@ export async function GET(
       return NextResponse.json({ error: "Conversa não encontrada." }, { status: 404 });
     }
 
+    // Auto-vínculo de lead caso a conversa não tenha campaign_lead_id registrado
+    if (!conversation.campaign_lead && conversation.contact_client_id) {
+      const { data: matchedLead } = await supabase
+        .from("campaign_leads")
+        .select(`
+          id,
+          campaign_id,
+          stage_id,
+          assigned_user_id,
+          version,
+          stage:campaign_stages(id, name, color, stage_kind),
+          campaign:campaigns(id, name, type)
+        `)
+        .eq("client_id", conversation.contact_client_id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (matchedLead) {
+        conversation.campaign_lead = matchedLead;
+        conversation.campaign_lead_id = matchedLead.id;
+        await supabase
+          .from("conversations")
+          .update({ campaign_lead_id: matchedLead.id })
+          .eq("id", conversationId);
+      }
+    }
+
     // 2. Buscar notas comerciais
     const { data: notes } = await supabase
       .from("conversation_notes")

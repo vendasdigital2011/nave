@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import crypto from "crypto";
+import { advanceStageOnMessageSent, advanceStageOnMessageReceived } from "@/lib/kanban-automation";
 
 export async function POST(req: NextRequest) {
   try {
@@ -279,6 +280,24 @@ export async function POST(req: NextRequest) {
             updated_at: new Date().toISOString(),
           })
           .eq("id", conversationId);
+
+        // Automação do Kanban: atualizar etapas do funil automaticamente
+        const currentLeadId = matchedLeadId || existingConv?.campaign_lead_id;
+        const currentClientId = matchedClientId || existingConv?.contact_client_id;
+
+        if (isFromMe) {
+          await advanceStageOnMessageSent(supabase, {
+            conversationId,
+            campaignLeadId: currentLeadId,
+            contactClientId: currentClientId,
+          });
+        } else {
+          await advanceStageOnMessageReceived(supabase, {
+            conversationId,
+            campaignLeadId: currentLeadId,
+            contactClientId: currentClientId,
+          });
+        }
 
         // 7. Registrar evento na auditoria append-only
         try {

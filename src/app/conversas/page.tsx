@@ -246,8 +246,13 @@ function ConversasContent() {
               }
             }
           }
-          // 3. Fallback: selecionar a primeira conversa da lista se nenhuma foi selecionada
-          if (!targetHandled && !selectedConversation && json.conversations && json.conversations.length > 0) {
+          // 3. Fallback: selecionar a primeira conversa da lista se nenhuma foi selecionada ou se a conversa ativa não pertence ao filtro atual
+          if (
+            !targetHandled &&
+            json.conversations &&
+            json.conversations.length > 0 &&
+            (!selectedConversation || !json.conversations.some((c: any) => c.id === selectedConversation.id))
+          ) {
             setSelectedConversation(json.conversations[0]);
           }
         }

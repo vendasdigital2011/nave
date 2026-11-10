@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { AUTH_COOKIE_NAME, AuthUser } from "@/lib/auth-constants";
 import { EvolutionService } from "@/lib/evolution-api";
 import { createServiceClient } from "@/lib/supabase/server";
+import { advanceStageOnMessageSent } from "@/lib/kanban-automation";
 
 async function getAuthenticatedUser(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
@@ -81,13 +82,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Se campaign_lead_id fornecido, atualiza last_activity_at
+    // 4. Se campaign_lead_id fornecido, avança etapa no Kanban
     if (campaign_lead_id) {
       try {
-        await supabase
-          .from("campaign_leads")
-          .update({ last_activity_at: new Date().toISOString() })
-          .eq("id", campaign_lead_id);
+        await advanceStageOnMessageSent(supabase, {
+          conversationId: "direct_send",
+          campaignLeadId: campaign_lead_id,
+          actorUserId: user.id || null,
+        });
       } catch {
         // Ignora
       }
