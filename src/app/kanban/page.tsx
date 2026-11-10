@@ -160,8 +160,9 @@ function KanbanContent() {
 
       {/* Main Kanban Board isolado por campanha */}
       <KanbanBoard
-        key={`${selectedCampaignId}-${refreshKey}`}
+        key={selectedCampaignId}
         campaignId={selectedCampaignId}
+        refreshTrigger={refreshKey}
         onRefresh={handleDataRefresh}
       />
 

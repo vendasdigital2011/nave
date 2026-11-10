@@ -20,7 +20,7 @@ function escapeCsvField(val: any): string {
   return `"${str}"`;
 }
 
-// GET /api/reports/export - Exportação de relatório em CSV compatível com Excel
+// GET /api/reports/export - Exportação de relatório em CSV compatível com Excel por Campanha
 export async function GET(request: Request) {
   try {
     const user = await getAuthenticatedUser();
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const type = searchParams.get("type") || "leads"; // "leads" | "funnel" | "sellers"
+    const type = searchParams.get("type") || "leads"; // "leads" | "funnel"
     const campaignId = searchParams.get("campaign_id") || "all";
     const period = searchParams.get("period") || "all";
 
@@ -44,38 +44,56 @@ export async function GET(request: Request) {
       minute: "2-digit",
     });
 
+    // 1. Obter detalhes da campanha selecionada
+    let campaignInfo: any = null;
+    if (campaignId !== "all") {
+      const { data: camp } = await supabase
+        .from("campaigns")
+        .select("id, name, type, created_at")
+        .eq("id", campaignId)
+        .maybeSingle();
+      campaignInfo = camp;
+    }
+
+    const campaignTitle = campaignInfo ? campaignInfo.name : "Todas as Campanhas";
+    const campaignType = campaignInfo ? campaignInfo.type : "Geral";
+
     let csvRows: string[] = [];
     const UTF8_BOM = "\uFEFF";
 
     // Cabeçalho institucional do relatório
-    csvRows.push(escapeCsvField("NaveProspect - Relatório Operacional e Comercial"));
+    csvRows.push(escapeCsvField("NAVETECH TELECOM - RELATÓRIO DE CAMPANHA"));
+    csvRows.push(escapeCsvField(`Campanha: ${campaignTitle}`));
+    csvRows.push(escapeCsvField(`Tipo de Campanha: ${campaignType}`));
     csvRows.push(escapeCsvField(`Data de Emissão: ${emissionDate} (Horário da Bahia)`));
     csvRows.push(escapeCsvField(`Operador Solicitante: ${user.name} (${user.email} - ${user.role})`));
-    csvRows.push(escapeCsvField(`Filtros: Campanha=${campaignId} | Período=${period}`));
+    csvRows.push(escapeCsvField(`Filtro de Período: ${period === "all" ? "Histórico Completo" : period === "30d" ? "Últimos 30 Dias" : "Últimos 7 Dias"}`));
     csvRows.push(""); // Linha em branco
 
     let rowCount = 0;
 
     if (type === "leads") {
-      // Exportação da lista de leads
+      // Exportação da lista de leads da campanha
       csvRows.push([
-        "ID",
+        "ID do Lead",
+        "Campanha",
         "Nome do Cliente",
         "Telefone",
+        "Condomínio",
         "Plano Atual",
         "Plano Alvo",
-        "Condomínio",
-        "Campanha",
-        "Etapa do Funil",
-        "Responsável",
+        "Etapa no Funil",
+        "Vendedor Responsável",
         "Data de Cadastro",
-        "Convertido Em",
+        "Data de Conversão",
+        "Observações",
       ].map(escapeCsvField).join(";"));
 
       let leadsQuery = supabase
         .from("campaign_leads")
         .select(`
           id,
+          notes,
           created_at,
           converted_at,
           client:clients(*),
@@ -92,16 +110,17 @@ export async function GET(request: Request) {
       const { data: leads } = await leadsQuery;
       let leadsToExport: any[] = leads || [];
 
-      // Fallback para tabela clients se Upgrade ainda estiver com registros legados
-      if (leadsToExport.length === 0) {
+      // Fallback estrito apenas se selecionado "all" ou a campanha legado Upgrade
+      if (leadsToExport.length === 0 && (campaignId === "all" || campaignId === "c0000000-0000-0000-0000-000000000001")) {
         const { data: clients } = await supabase.from("clients").select("*").order("name", { ascending: true });
         leadsToExport = (clients || []).map((c) => ({
           id: c.id,
+          notes: c.notes,
           created_at: c.created_at,
           converted_at: c.sold_at,
           client: c,
           stage: { name: c.status },
-          campaign: { name: "Upgrade 100M" },
+          campaign: { name: "Upgrade 50 → 100 Mega" },
           assigned_user: null,
         }));
       }
@@ -110,44 +129,56 @@ export async function GET(request: Request) {
       leadsToExport.forEach((l: any) => {
         csvRows.push([
           l.id,
+          l.campaign?.name || campaignTitle,
           l.client?.name || "Sem nome",
           l.client?.phone || "",
+          l.client?.condominium || "Geral",
           l.client?.current_plan || "",
           l.client?.target_plan || "",
-          l.client?.condominium || "Geral",
-          l.campaign?.name || "Upgrade 100M",
           l.stage?.name || "Importados",
           l.assigned_user?.display_name || "Fila Geral",
           l.created_at ? new Date(l.created_at).toLocaleDateString("pt-BR") : "",
           l.converted_at ? new Date(l.converted_at).toLocaleDateString("pt-BR") : "",
+          l.notes || "",
         ].map(escapeCsvField).join(";"));
       });
     } else if (type === "funnel") {
-      // Exportação do Funil de Etapas
+      // Exportação do Funil de Etapas por Campanha
       csvRows.push([
-        "ID da Etapa",
+        "Posição",
         "Campanha",
         "Nome da Etapa",
         "Classificação",
         "Total de Leads",
       ].map(escapeCsvField).join(";"));
 
-      const { data: stages } = await supabase
+      let stagesQuery = supabase
         .from("campaign_stages")
-        .select("id, name, stage_kind, campaign:campaigns(name)")
+        .select("id, name, stage_kind, position, campaign:campaigns(name)")
         .order("position", { ascending: true });
 
-      const { data: leads } = await supabase.from("campaign_leads").select("stage_id");
+      if (campaignId !== "all") {
+        stagesQuery = stagesQuery.eq("campaign_id", campaignId);
+      }
+
+      const { data: stages } = await stagesQuery;
+
+      let leadCountsQuery = supabase.from("campaign_leads").select("stage_id");
+      if (campaignId !== "all") {
+        leadCountsQuery = leadCountsQuery.eq("campaign_id", campaignId);
+      }
+      const { data: leads } = await leadCountsQuery;
+
       const stageCountMap: Record<string, number> = {};
       (leads || []).forEach((l) => {
         stageCountMap[l.stage_id] = (stageCountMap[l.stage_id] || 0) + 1;
       });
 
       rowCount = (stages || []).length;
-      (stages || []).forEach((s: any) => {
+      (stages || []).forEach((s: any, idx: number) => {
         csvRows.push([
-          s.id,
-          s.campaign?.name || "Upgrade 100M",
+          s.position ?? idx + 1,
+          s.campaign?.name || campaignTitle,
           s.name,
           s.stage_kind,
           stageCountMap[s.id] || 0,
@@ -158,12 +189,14 @@ export async function GET(request: Request) {
     // Registrar auditoria da exportação
     try {
       await supabase.from("audit_logs").insert({
+        id: "log_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
         actor_user_id: user.id || null,
-        action: "report.exported",
+        action: `report.exported.${type}`,
         target_entity: "reports",
         details: {
           report_type: type,
           campaign_id: campaignId,
+          campaign_name: campaignTitle,
           period,
           total_rows: rowCount,
         },
@@ -173,7 +206,8 @@ export async function GET(request: Request) {
     }
 
     const fullCsv = UTF8_BOM + csvRows.join("\r\n");
-    const filename = `naveprospect_${type}_${new Date().toISOString().slice(0, 10)}.csv`;
+    const safeCampName = campaignTitle.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 30);
+    const filename = `relatorio_${safeCampName}_${type}_${new Date().toISOString().slice(0, 10)}.csv`;
 
     return new Response(fullCsv, {
       headers: {

@@ -3,7 +3,11 @@ import { cookies } from "next/headers";
 import { AUTH_COOKIE_NAME, AuthUser } from "@/lib/auth-constants";
 import { EvolutionService } from "@/lib/evolution-api";
 import { createServiceClient } from "@/lib/supabase/server";
-import { advanceStageOnMessageSent } from "@/lib/kanban-automation";
+import { 
+  advanceStageOnMessageSent,
+  handleInvalidWhatsAppNumber,
+  isWhatsAppNonExistentError
+} from "@/lib/kanban-automation";
 
 async function getAuthenticatedUser(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
@@ -76,6 +80,24 @@ export async function POST(req: NextRequest) {
     const result = await EvolutionService.sendTextMessage(number, text, activeInstanceName);
 
     if (!result.success) {
+      if (isWhatsAppNonExistentError(result.error)) {
+        await handleInvalidWhatsAppNumber(supabase, {
+          campaignLeadId: campaign_lead_id || null,
+          phone: number,
+          actorUserId: user.id || null,
+          rawError: result.error,
+        });
+
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: "Este número não possui WhatsApp ativo. O lead foi movido automaticamente para a coluna de Desativados / Inválidos.",
+            is_invalid_number: true,
+          },
+          { status: 400 }
+        );
+      }
+
       return NextResponse.json(
         { success: false, error: result.error || "Falha no envio pela Evolution API." },
         { status: 502 }

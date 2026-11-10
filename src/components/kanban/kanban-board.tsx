@@ -44,6 +44,7 @@ import { Client, ClientStatus, CampaignStage } from "@/types/database";
 
 interface KanbanBoardProps {
   campaignId?: string;
+  refreshTrigger?: number;
   onRefresh?: () => void;
 }
 
@@ -98,7 +99,10 @@ const DEFAULT_UPGRADE_STAGES: {
   },
 ];
 
-export function KanbanBoard({ campaignId = "c0000000-0000-0000-0000-000000000001" }: KanbanBoardProps) {
+export function KanbanBoard({ 
+  campaignId = "c0000000-0000-0000-0000-000000000001",
+  refreshTrigger,
+}: KanbanBoardProps) {
   const [stages, setStages] = useState<any[]>(DEFAULT_UPGRADE_STAGES);
   const [clients, setClients] = useState<Client[]>([]);
   const [leadStageMap, setLeadStageMap] = useState<Record<string, string>>({});
@@ -150,8 +154,10 @@ export function KanbanBoard({ campaignId = "c0000000-0000-0000-0000-000000000001
       .catch(() => {});
   }, []);
 
-  const loadData = async () => {
-    setIsLoading(true);
+  const loadData = async (isInitial = false) => {
+    if (isInitial || clients.length === 0) {
+      setIsLoading(true);
+    }
     try {
       // 1. Carregar etapas da campanha
       const resCamp = await fetch(`/api/campaigns/${campaignId}`);
@@ -220,8 +226,14 @@ export function KanbanBoard({ campaignId = "c0000000-0000-0000-0000-000000000001
   };
 
   useEffect(() => {
-    loadData();
+    loadData(true);
   }, [campaignId]);
+
+  useEffect(() => {
+    if (refreshTrigger !== undefined && refreshTrigger > 0) {
+      loadData(false);
+    }
+  }, [refreshTrigger]);
 
   const handleMoveAllFrioToImportados = async () => {
     setIsMovingBatch(true);

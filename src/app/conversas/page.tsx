@@ -168,9 +168,9 @@ function ConversasContent() {
       .catch(() => {});
   }, []);
 
-  // 2. Carregar conversas
-  const loadConversas = async () => {
-    setIsLoadingConversations(true);
+  // 2. Carregar conversas (com suporte a atualização silenciosa em background)
+  const loadConversas = async (isSilent = false) => {
+    if (!isSilent) setIsLoadingConversations(true);
     try {
       const params = new URLSearchParams();
       if (statusFilter !== "all") params.append("status", statusFilter);
@@ -260,7 +260,7 @@ function ConversasContent() {
     } catch (err) {
       console.error("Erro ao carregar conversas:", err);
     } finally {
-      setIsLoadingConversations(false);
+      if (!isSilent) setIsLoadingConversations(false);
     }
   };
 
@@ -391,11 +391,15 @@ function ConversasContent() {
 
       if (res.ok) {
         setInputText("");
-        await loadConversationDetails(selectedConversation.id);
-        loadConversas();
+        await loadConversationDetails(selectedConversation.id, true);
+        loadConversas(true);
       } else {
         const err = await res.json();
-        alert(`Erro no envio: ${err.error || "Falha na Evolution API"}`);
+        alert(err.error || "Falha no envio pela Evolution API");
+        if (err.is_invalid_number) {
+          await loadConversationDetails(selectedConversation.id, true);
+          loadConversas(true);
+        }
       }
     } catch (err: any) {
       alert(`Falha ao conectar: ${err.message}`);
@@ -484,7 +488,7 @@ function ConversasContent() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={loadConversas}
+              onClick={() => loadConversas(false)}
               className="h-7 w-7 p-0 text-[#64748B] hover:text-[#0F172A]"
               title="Atualizar conversas"
             >

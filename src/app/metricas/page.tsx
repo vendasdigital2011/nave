@@ -22,6 +22,8 @@ import {
   Flame,
   MessageSquare,
   Clock,
+  Printer,
+  FileText,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -124,8 +126,10 @@ export default function MetricasPage() {
       const res = await fetch("/api/campaigns");
       if (res.ok) {
         const json = await res.json();
-        if (json.success && json.campaigns) {
+        if (json.success && json.campaigns && json.campaigns.length > 0) {
           setCampaigns(json.campaigns);
+          // Priorizar a primeira campanha ativa para relatórios por campanha
+          setSelectedCampaign(json.campaigns[0].id);
         }
       }
     } catch (err) {
@@ -169,6 +173,14 @@ export default function MetricasPage() {
     if (selectedPeriod !== "all") params.append("period", selectedPeriod);
 
     window.open(`/api/reports/export?${params.toString()}`, "_blank");
+  };
+
+  const handleExportPdf = () => {
+    const params = new URLSearchParams();
+    if (selectedCampaign !== "all") params.append("campaign_id", selectedCampaign);
+    if (selectedPeriod !== "all") params.append("period", selectedPeriod);
+
+    window.open(`/metricas/relatorio-pdf?${params.toString()}`, "_blank");
   };
 
   const npsPieData = [
@@ -227,14 +239,26 @@ export default function MetricasPage() {
             </select>
           </div>
 
-          {/* Botão de Exportação */}
+          {/* Botões de Exportação por Campanha */}
           <Button
             size="sm"
             onClick={() => handleExportCsv("leads")}
-            className="bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs h-8 px-3 rounded-lg shadow-2xs"
+            variant="outline"
+            className="border-slate-300 text-slate-800 text-xs h-8 px-3 rounded-lg shadow-2xs hover:bg-slate-50"
+            title="Exportar dados da campanha em planilha CSV compatível com Excel"
           >
-            <Download className="h-3.5 w-3.5 mr-1.5 text-[#FF6A00]" />
-            Exportar CSV
+            <Download className="h-3.5 w-3.5 mr-1.5 text-slate-600" />
+            CSV da Campanha
+          </Button>
+
+          <Button
+            size="sm"
+            onClick={handleExportPdf}
+            className="bg-[#FF6A00] hover:bg-[#E85C00] text-white text-xs h-8 px-3.5 rounded-lg shadow-2xs font-bold"
+            title="Visualizar e imprimir o relatório executivo ilustrado em PDF"
+          >
+            <FileText className="h-3.5 w-3.5 mr-1.5" />
+            PDF Ilustrativo
           </Button>
 
           <Button

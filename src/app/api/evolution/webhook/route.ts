@@ -296,6 +296,7 @@ export async function POST(req: NextRequest) {
             conversationId,
             campaignLeadId: currentLeadId,
             contactClientId: currentClientId,
+            messageText: text,
           });
         }
 
